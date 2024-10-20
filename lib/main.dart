@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:vibration/vibration.dart';  // 진동 패키지 추가
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -48,7 +49,7 @@ class _NumberGameState extends State<NumberGame> {
   double bestRecord = 0; // 최고기록
 
   // 오디오 플레이어 인스턴스 생성
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -192,9 +193,10 @@ class _NumberGameState extends State<NumberGame> {
   void _onButtonPressed(int number, int index) {
     if (number == currentNumber) {
       // 버튼 클릭 시 소리 재생
-      _playSound();
+      // _playSound();
 
       // 진동 발생
+      // HapticFeedback.lightImpact(); // 휴대폰 > 설정 > 소리 및 진동 > 시스템 진동 > 터치 피드백이 켜져야 가능
       _execVibrate();
 
       setState(() {
@@ -210,15 +212,15 @@ class _NumberGameState extends State<NumberGame> {
 
   // 소리 재생
   void _playSound() async {
-    await _audioPlayer.setAsset('assets/button_click.mp3');
-    _audioPlayer.play();
+    await audioPlayer.setAsset('assets/button_click.mp3');
+    audioPlayer.play();
   }
 
   // 진동 발생 (진동 기능이 기기에서 지원될 경우)
   void _execVibrate() async {
     bool? hasVibrator = await Vibration.hasVibrator();
     if (hasVibrator == true) {
-      Vibration.vibrate(duration: 100); // 100ms 동안 진동
+      Vibration.vibrate(duration: 10); // 100ms 동안 진동
     }
   }
 
