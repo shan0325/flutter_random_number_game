@@ -22,7 +22,13 @@ class MyApp extends StatelessWidget {
         home: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
-              title: const Text('랜덤 숫자 게임')
+            backgroundColor: const Color(0xFFCBD2A4),
+            title: const Text(
+              '랜덤 숫자 게임',
+              style: TextStyle(
+                color: Color(0xFF54473F),
+              ),
+            ),
           ),
           body: const NumberGame(),
         )
@@ -164,8 +170,11 @@ class _NumberGameState extends State<NumberGame> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('게임 종료'),
-            content: Text('기록: $record'),
+            title: const Text('게임 종료'),
+            content: Text(
+              '기록: $record초',
+              style: const TextStyle(fontSize: 18),
+            ),
             actions: [
               TextButton(
                 onPressed: () {
@@ -174,7 +183,7 @@ class _NumberGameState extends State<NumberGame> {
                     gameStarted = false; // 게임 종료 후 시작 버튼을 보이도록 함
                   });
                 },
-                child: Text('확인'),
+                child: const Text('확인'),
               ),
             ],
           );
@@ -239,99 +248,111 @@ class _NumberGameState extends State<NumberGame> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
+      decoration: const BoxDecoration(
+        color: Color(0xFFE9EED9),
+        /*image: DecorationImage(
           image: AssetImage('assets/background.jpg'), // 배경 이미지 경로
           fit: BoxFit.cover, // 이미지가 컨테이너를 채우도록 설정
-        ),
+        ),*/
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
             if (!gameStarted && countdown == 0) ...[
-              if (bestRecord != 0)
-                Text(
-                  '최고기록 $bestRecord초',
-                  style: TextStyle(
-                    fontSize: 20,
-                  ),
-                ),
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: startGame,
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.list),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => RecordPage(records: records)),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white, // 흰색 텍스트
-                    textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12), // 부드러운 곡선
-                    ),
-                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    backgroundColor: const Color(0xFF9A7E6F),
+                    foregroundColor: Colors.white,
+                    // shape: RoundedRectangleBorder(
+                    //   borderRadius: BorderRadius.circular(12),
+                    // ),
+                    elevation: 0,
                   ),
-                  child: const Text('시작'),
                 ),
               ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => RecordPage(records: records)),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  backgroundColor: Colors.grey[800],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: startGame,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                        backgroundColor: const Color(0xFF54473F),
+                        foregroundColor: Colors.white, // 흰색 텍스트
+                        textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12), // 부드러운 곡선
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text('시작'),
+                    ),
                   ),
-                  elevation: 2,
-                ),
-                child: const Text('기록 보기'),
+                  if (bestRecord != 0) ...[
+                    const SizedBox(height: 15),
+                    Center(
+                      child: Text(
+                        '최고 기록 $bestRecord초',
+                        style: const TextStyle(
+                          color: Color(0xFF54473F),
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ] else if (countdown > 0) ...[
               Center(
                 child: Text(
                   '$countdown', // 카운트다운 표시
                   style: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 80,
-                    fontWeight: FontWeight.bold
+                      color: Color(0xFF54473F),
+                      fontSize: 80,
+                      fontWeight: FontWeight.bold
                   ),
                 ),
               ),
             ] else ...[
               Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     '시간: ${formatTime(timeElapsed)}초',
                     style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 24
+                        color: Color(0xFF54473F),
+                        fontSize: 24
                     ),
                   ),
                   const SizedBox(height: 20),
                   GridView.count(
                     crossAxisCount: 5,
-                    crossAxisSpacing: 2.0,
-                    mainAxisSpacing: 2.0,
+                    crossAxisSpacing: 10.0,
+                    mainAxisSpacing: 10.0,
                     shrinkWrap: true,
                     children: List.generate(numbers.length, (index) {
                       final number = numbers[index];
                       return ElevatedButton(
-                        onPressed: number != null && !gamePaused ? () => _onButtonPressed(number!, index) : null,
+                        onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: number == null ? Colors.grey[300] : Colors.white, // 클릭된 버튼은 회색
-                          foregroundColor: Colors.black54, // 검은색 텍스트
+                          backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
+                          foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 2,
+                          elevation: 0,
                         ),
                         child: Text(
                           number != null ? '$number' : '',
@@ -344,7 +365,7 @@ class _NumberGameState extends State<NumberGame> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ElevatedButton(
+                      /*ElevatedButton(
                         onPressed: gamePaused ? resumeGame : pauseGame,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
@@ -357,17 +378,17 @@ class _NumberGameState extends State<NumberGame> {
                         ),
                         child: Text(gamePaused ? '재개' : '중지'),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 20),*/
                       ElevatedButton(
                         onPressed: () => endGame(showRecord: false),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                          backgroundColor: Colors.grey[900],
+                          backgroundColor: const Color(0xFF54473F),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 2,
+                          elevation: 0,
                         ),
                         child: const Text('종료'),
                       ),
@@ -393,33 +414,60 @@ class RecordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('기록 보기'),
+        backgroundColor: const Color(0xFFCBD2A4),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          color: const Color(0xFF54473F),
+        ),
+        title: const Text(
+          '기록 보기',
+          style: TextStyle(
+            color: Color(0xFF54473F),
+          ),
+        ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '기록 목록',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController, // 스크롤 컨트롤러 적용
-                itemCount: records.length,
-                itemBuilder: (context, index) {
-                  final record = records[index];
-                  return ListTile(
-                    leading: Text('${records.length - index}', style: TextStyle(fontSize: 20)),
-                    title: Text('기록: ${record['record']}초'),
-                    subtitle: Text('등록일: ${record['date']}'),
-                  );
-                },
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+        child: Container(
+          color: const Color(0xFFE9EED9),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController, // 스크롤 컨트롤러 적용
+                  itemCount: records.length,
+                  itemBuilder: (context, index) {
+                    final record = records[index];
+                    return ListTile(
+                      leading: Text(
+                          '${records.length - index}',
+                          style: const TextStyle(
+                              fontSize: 20,
+                              color: Color(0xFF54473F)
+                          )
+                      ),
+                      title: Text(
+                        '기록: ${record['record']}초',
+                        style: const TextStyle(
+                            color: Color(0xFF54473F)
+                        ),
+                      ),
+                      subtitle: Text(
+                        '등록일: ${record['date']}',
+                        style: const TextStyle(
+                            color: Color(0xFF54473F)
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
