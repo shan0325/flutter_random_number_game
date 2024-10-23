@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:vibration/vibration.dart';  // 진동 패키지 추가
 import 'package:flutter/services.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 void main() {
   runApp(const MyApp());
@@ -256,7 +257,7 @@ class _NumberGameState extends State<NumberGame> {
         ),*/
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Stack(
           children: [
             if (!gameStarted && countdown == 0) ...[
@@ -337,29 +338,35 @@ class _NumberGameState extends State<NumberGame> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  GridView.count(
-                    crossAxisCount: 5,
-                    crossAxisSpacing: 10.0,
-                    mainAxisSpacing: 10.0,
-                    shrinkWrap: true,
-                    children: List.generate(numbers.length, (index) {
-                      final number = numbers[index];
-                      return ElevatedButton(
-                        onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
-                          foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: GridView.count(
+                      crossAxisCount: 5,
+                      crossAxisSpacing: 10.0,
+                      mainAxisSpacing: 10.0,
+                      shrinkWrap: true,
+                      children: List.generate(numbers.length, (index) {
+                        final number = numbers[index];
+                        return ElevatedButton(
+                          onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                            backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
+                            foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
                           ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          number != null ? '$number' : '',
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                      );
-                    }),
+                          child: AutoSizeText(
+                            number != null ? '$number' : '',
+                            style: const TextStyle(fontSize: 25),
+                            maxLines: 1, // 한 줄에 맞게
+                            minFontSize: 20, // 텍스트가 작아질 수 있는 최소 크기
+                          ),
+                        );
+                      }),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Row(
