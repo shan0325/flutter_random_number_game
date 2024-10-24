@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: const Color(0xFFCBD2A4),
             title: const Text(
-              '랜덤 숫자 게임',
+              '1to25',
               style: TextStyle(
                 color: Color(0xFF54473F),
               ),
@@ -171,10 +171,10 @@ class _NumberGameState extends State<NumberGame> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('게임 종료'),
+            title: const Text('GAME OVER'),
             content: Text(
-              '기록: $record초',
-              style: const TextStyle(fontSize: 18),
+              '$record',
+              style: const TextStyle(fontSize: 30),
             ),
             actions: [
               TextButton(
@@ -184,7 +184,7 @@ class _NumberGameState extends State<NumberGame> {
                     gameStarted = false; // 게임 종료 후 시작 버튼을 보이도록 함
                   });
                 },
-                child: const Text('확인'),
+                child: const Text('OK'),
               ),
             ],
           );
@@ -298,17 +298,17 @@ class _NumberGameState extends State<NumberGame> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text('시작'),
+                      child: const Text('START'),
                     ),
                   ),
                   if (bestRecord != 0) ...[
                     const SizedBox(height: 15),
                     Center(
                       child: Text(
-                        '최고 기록 $bestRecord초',
+                        'BEST $bestRecord',
                         style: const TextStyle(
                           color: Color(0xFF54473F),
-                          fontSize: 18,
+                          fontSize: 20,
                         ),
                       ),
                     ),
@@ -327,81 +327,99 @@ class _NumberGameState extends State<NumberGame> {
                 ),
               ),
             ] else ...[
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '시간: ${formatTime(timeElapsed)}초',
-                    style: const TextStyle(
-                        color: Color(0xFF54473F),
-                        fontSize: 24
-                    ),
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new),
+                  onPressed: () => endGame(showRecord: false),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    backgroundColor: const Color(0xFF9A7E6F),
+                    foregroundColor: Colors.white,
+                    // shape: RoundedRectangleBorder(
+                    //   borderRadius: BorderRadius.circular(12),
+                    // ),
+                    elevation: 0,
                   ),
-                  const SizedBox(height: 20),
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: GridView.count(
-                      crossAxisCount: 5,
-                      crossAxisSpacing: 10.0,
-                      mainAxisSpacing: 10.0,
-                      shrinkWrap: true,
-                      children: List.generate(numbers.length, (index) {
-                        final number = numbers[index];
-                        return ElevatedButton(
-                          onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
+                ),
+              ),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${formatTime(timeElapsed)}',
+                      style: const TextStyle(
+                          color: Color(0xFF54473F),
+                          fontSize: 50
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 500),
+                      child: GridView.count(
+                        crossAxisCount: 5,
+                        crossAxisSpacing: 5.0,
+                        mainAxisSpacing: 5.0,
+                        shrinkWrap: true,
+                        children: List.generate(numbers.length, (index) {
+                          final number = numbers[index];
+                          return ElevatedButton(
+                            onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                              backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
+                              foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: AutoSizeText(
+                              number != null ? '$number' : '',
+                              style: const TextStyle(fontSize: 25),
+                              maxLines: 1, // 한 줄에 맞게
+                              minFontSize: 20, // 텍스트가 작아질 수 있는 최소 크기
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    /*const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: gamePaused ? resumeGame : pauseGame,
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                            backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
-                            foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
+                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                            backgroundColor: Colors.grey[800],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Text(gamePaused ? '재개' : '중지'),
+                        ),
+                        const SizedBox(width: 20),
+                        ElevatedButton(
+                          onPressed: () => endGame(showRecord: false),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                            backgroundColor: const Color(0xFF54473F),
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 0,
                           ),
-                          child: AutoSizeText(
-                            number != null ? '$number' : '',
-                            style: const TextStyle(fontSize: 25),
-                            maxLines: 1, // 한 줄에 맞게
-                            minFontSize: 20, // 텍스트가 작아질 수 있는 최소 크기
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      /*ElevatedButton(
-                        onPressed: gamePaused ? resumeGame : pauseGame,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                          backgroundColor: Colors.grey[800],
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
+                          child: const Text('종료'),
                         ),
-                        child: Text(gamePaused ? '재개' : '중지'),
-                      ),
-                      const SizedBox(width: 20),*/
-                      ElevatedButton(
-                        onPressed: () => endGame(showRecord: false),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                          backgroundColor: const Color(0xFF54473F),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text('종료'),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),*/
+                  ],
+                ),
               ),
             ],
           ],
@@ -411,11 +429,37 @@ class _NumberGameState extends State<NumberGame> {
   }
 }
 
-class RecordPage extends StatelessWidget {
+class RecordPage extends StatefulWidget {
   final List<Map<String, String>> records;
-  final ScrollController _scrollController = ScrollController(); // 스크롤 컨트롤러 추가
 
   RecordPage({required this.records});
+
+  @override
+  _RecordPageState createState() => _RecordPageState();
+}
+
+class _RecordPageState extends State<RecordPage> {
+  final ScrollController _scrollController = ScrollController(); // 스크롤 컨트롤러 추가
+  String _sortOption = 'record'; // 초기 정렬 기준: 'record'
+
+  // 정렬 함수
+  void _sortRecords() {
+    setState(() {
+      if (_sortOption == 'record') {
+        // 기록 기준으로 오름차순 정렬
+        widget.records.sort((a, b) => double.parse(a['record']!).compareTo(double.parse(b['record']!)));
+      } else if (_sortOption == 'date') {
+        // 등록일 기준으로 내림차순 정렬
+        widget.records.sort((a, b) => b['date']!.compareTo(a['date']!));
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _sortRecords(); // 페이지가 로드될 때 초기 정렬 수행
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -430,11 +474,34 @@ class RecordPage extends StatelessWidget {
           color: const Color(0xFF54473F),
         ),
         title: const Text(
-          '기록 보기',
+          'Records',
           style: TextStyle(
             color: Color(0xFF54473F),
           ),
         ),
+        actions: [
+          // 정렬 기준 선택을 위한 DropdownButton 추가
+          DropdownButton<String>(
+            value: _sortOption,
+            icon: const Icon(Icons.sort, color: Color(0xFF54473F)),
+            onChanged: (String? newValue) {
+              setState(() {
+                _sortOption = newValue!;
+                _sortRecords(); // 정렬 기준 변경 시 정렬 실행
+              });
+            },
+            items: <String>['record', 'date']
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value == 'record' ? 'Record' : 'Date',
+                  style: const TextStyle(color: Color(0xFF54473F)),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
@@ -446,27 +513,27 @@ class RecordPage extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController, // 스크롤 컨트롤러 적용
-                  itemCount: records.length,
+                  itemCount: widget.records.length,
                   itemBuilder: (context, index) {
-                    final record = records[index];
+                    final record = widget.records[index];
                     return ListTile(
                       leading: Text(
-                          '${records.length - index}',
-                          style: const TextStyle(
-                              fontSize: 20,
-                              color: Color(0xFF54473F)
-                          )
+                        '${widget.records.length - index}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF54473F),
+                        ),
                       ),
                       title: Text(
-                        '기록: ${record['record']}초',
+                        '${record['record']}',
                         style: const TextStyle(
-                            color: Color(0xFF54473F)
+                          color: Color(0xFF54473F),
                         ),
                       ),
                       subtitle: Text(
-                        '등록일: ${record['date']}',
+                        '${record['date']}',
                         style: const TextStyle(
-                            color: Color(0xFF54473F)
+                          color: Color(0xFF54473F),
                         ),
                       ),
                     );

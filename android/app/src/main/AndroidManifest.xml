@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.VIBRATE"/>
     <application
-        android:label="랜덤숫자게임"
+        android:label="1to25"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
