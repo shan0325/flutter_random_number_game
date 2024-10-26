@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
@@ -10,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   runApp(const MyApp());
 }
 
@@ -19,20 +22,8 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
-          resizeToAvoidBottomInset: false,
-          appBar: AppBar(
-            backgroundColor: const Color(0xFFCBD2A4),
-            title: const Text(
-              '1to25',
-              style: TextStyle(
-                color: Color(0xFF54473F),
-              ),
-            ),
-          ),
-          body: const NumberGame(),
-        )
+    return const MaterialApp(
+      home: NumberGame(),
     );
   }
 }
@@ -248,183 +239,195 @@ class _NumberGameState extends State<NumberGame> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFE9EED9),
-        /*image: DecorationImage(
-          image: AssetImage('assets/background.jpg'), // 배경 이미지 경로
-          fit: BoxFit.cover, // 이미지가 컨테이너를 채우도록 설정
-        ),*/
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFCBD2A4),
+        title: const Text(
+          '1to25',
+          style: TextStyle(
+            color: Color(0xFF54473F),
+          ),
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Stack(
-          children: [
-            if (!gameStarted && countdown == 0) ...[
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: const Icon(Icons.list),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => RecordPage(records: records)),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    backgroundColor: const Color(0xFF9A7E6F),
-                    foregroundColor: Colors.white,
-                    // shape: RoundedRectangleBorder(
-                    //   borderRadius: BorderRadius.circular(12),
-                    // ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: startGame,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                        backgroundColor: const Color(0xFF54473F),
-                        foregroundColor: Colors.white, // 흰색 텍스트
-                        textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12), // 부드러운 곡선
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('START'),
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFE9EED9),
+          /*image: DecorationImage(
+            image: AssetImage('assets/background.jpg'), // 배경 이미지 경로
+            fit: BoxFit.cover, // 이미지가 컨테이너를 채우도록 설정
+          ),*/
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Stack(
+            children: [
+              if (!gameStarted && countdown == 0) ...[
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.list),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => RecordPage(records: records)),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      backgroundColor: const Color(0xFF9A7E6F),
+                      foregroundColor: Colors.white,
+                      // shape: RoundedRectangleBorder(
+                      //   borderRadius: BorderRadius.circular(12),
+                      // ),
+                      elevation: 0,
                     ),
                   ),
-                  if (bestRecord != 0) ...[
-                    const SizedBox(height: 15),
-                    Center(
-                      child: Text(
-                        'BEST $bestRecord',
-                        style: const TextStyle(
-                          color: Color(0xFF54473F),
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ] else if (countdown > 0) ...[
-              Center(
-                child: Text(
-                  '$countdown', // 카운트다운 표시
-                  style: const TextStyle(
-                      color: Color(0xFF54473F),
-                      fontSize: 80,
-                      fontWeight: FontWeight.bold
-                  ),
                 ),
-              ),
-            ] else ...[
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  onPressed: () => endGame(showRecord: false),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    backgroundColor: const Color(0xFF9A7E6F),
-                    foregroundColor: Colors.white,
-                    // shape: RoundedRectangleBorder(
-                    //   borderRadius: BorderRadius.circular(12),
-                    // ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-              Center(
-                child: Column(
+                Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      '${formatTime(timeElapsed)}',
-                      style: const TextStyle(
-                          color: Color(0xFF54473F),
-                          fontSize: 50
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: startGame,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                          backgroundColor: const Color(0xFF54473F),
+                          foregroundColor: Colors.white, // 흰색 텍스트
+                          textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12), // 부드러운 곡선
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text('START'),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Container(
-                      constraints: const BoxConstraints(maxWidth: 500),
-                      child: GridView.count(
-                        crossAxisCount: 5,
-                        crossAxisSpacing: 5.0,
-                        mainAxisSpacing: 5.0,
-                        shrinkWrap: true,
-                        children: List.generate(numbers.length, (index) {
-                          final number = numbers[index];
-                          return ElevatedButton(
-                            onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
+                    if (bestRecord != 0) ...[
+                      const SizedBox(height: 15),
+                      Center(
+                        child: Text(
+                          'BEST $bestRecord',
+                          style: const TextStyle(
+                            color: Color(0xFF54473F),
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ] else if (countdown > 0) ...[
+                Center(
+                  child: Text(
+                    '$countdown', // 카운트다운 표시
+                    style: const TextStyle(
+                        color: Color(0xFF54473F),
+                        fontSize: 80,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new),
+                    onPressed: () => endGame(showRecord: false),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      backgroundColor: const Color(0xFF9A7E6F),
+                      foregroundColor: Colors.white,
+                      // shape: RoundedRectangleBorder(
+                      //   borderRadius: BorderRadius.circular(12),
+                      // ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${formatTime(timeElapsed)}',
+                        style: const TextStyle(
+                            color: Color(0xFF54473F),
+                            fontSize: 50
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 500),
+                        child: GridView.count(
+                          crossAxisCount: 5,
+                          crossAxisSpacing: 5.0,
+                          mainAxisSpacing: 5.0,
+                          shrinkWrap: true,
+                          children: List.generate(numbers.length, (index) {
+                            final number = numbers[index];
+                            return ElevatedButton(
+                              onPressed: number != null && !gamePaused ? () => _onButtonPressed(number, index) : null,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                                backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
+                                foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: AutoSizeText(
+                                number != null ? '$number' : '',
+                                style: const TextStyle(fontSize: 25),
+                                maxLines: 1, // 한 줄에 맞게
+                                minFontSize: 20, // 텍스트가 작아질 수 있는 최소 크기
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                      /*const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: gamePaused ? resumeGame : pauseGame,
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                              backgroundColor: number == null ? Colors.grey[300] : const Color(0xFFCBD2A4), // 클릭된 버튼은 회색
-                              foregroundColor: const Color(0xFF54473F), // 검은색 텍스트
+                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                              backgroundColor: Colors.grey[800],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: Text(gamePaused ? '재개' : '중지'),
+                          ),
+                          const SizedBox(width: 20),
+                          ElevatedButton(
+                            onPressed: () => endGame(showRecord: false),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                              backgroundColor: const Color(0xFF54473F),
+                              foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               elevation: 0,
                             ),
-                            child: AutoSizeText(
-                              number != null ? '$number' : '',
-                              style: const TextStyle(fontSize: 25),
-                              maxLines: 1, // 한 줄에 맞게
-                              minFontSize: 20, // 텍스트가 작아질 수 있는 최소 크기
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                    /*const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: gamePaused ? resumeGame : pauseGame,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                            backgroundColor: Colors.grey[800],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
+                            child: const Text('종료'),
                           ),
-                          child: Text(gamePaused ? '재개' : '중지'),
-                        ),
-                        const SizedBox(width: 20),
-                        ElevatedButton(
-                          onPressed: () => endGame(showRecord: false),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                            backgroundColor: const Color(0xFF54473F),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text('종료'),
-                        ),
-                      ],
-                    ),*/
-                  ],
+                        ],
+                      ),*/
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
+      bottomNavigationBar: AdMobComponent(),
     );
   }
 }
@@ -544,6 +547,53 @@ class _RecordPageState extends State<RecordPage> {
           ),
         ),
       ),
+      bottomNavigationBar: AdMobComponent(),
+    );
+  }
+}
+
+class AdMobComponent extends StatefulWidget {
+  @override
+  _AdMobComponentState createState() => _AdMobComponentState ();
+}
+
+class _AdMobComponentState extends State<AdMobComponent> {
+  BannerAd? _bannerAd;  // 배너 광고 객체 생성
+  bool _isBannerAdLoaded = false; // 광고 로딩 여부 확인 변수
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();  // 배너 광고 로드
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-4660704022375249/6821128098',
+      size: AdSize.fullBanner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _isBannerAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          print('Banner Ad Failed to Load: $error');
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: _isBannerAdLoaded ? SizedBox(
+        width: _bannerAd!.size.width.toDouble(),
+        height: _bannerAd!.size.height.toDouble(),
+        child: AdWidget(ad: _bannerAd!),
+      ) : const SizedBox(),
     );
   }
 }
