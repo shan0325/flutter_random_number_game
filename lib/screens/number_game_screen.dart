@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vibration/vibration.dart';
 
+import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../services/record_storage.dart';
 import '../widgets/ad_mob_banner.dart';
@@ -22,15 +23,20 @@ class NumberGameScreen extends StatefulWidget {
 class _NumberGameScreenState extends State<NumberGameScreen> {
   late final RecordStorage _recordStorage;
 
-  List<int?> numbers = List.generate(25, (index) => index + 1)..shuffle();
+  GameDifficulty selectedDifficulty = GameDifficulty.normal;
+  List<int?> numbers =
+      List.generate(GameDifficulty.normal.maxNumber, (index) => index + 1)
+        ..shuffle();
   int currentNumber = 1;
   bool gameStarted = false;
   bool gamePaused = false;
   int timeElapsed = 0;
   Timer? timer;
+  Timer? penaltyTimer;
   List<GameRecord> records = [];
   int countdown = 0;
   double bestRecord = 0;
+  bool showPenalty = false;
 
   @override
   void initState() {
@@ -51,8 +57,9 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   }
 
   void _setBestRecord() {
-    if (records.isEmpty) return;
-    bestRecord = GameRecord.bestOf(records);
+    final selectedRecords = _selectedDifficultyRecords();
+    bestRecord =
+        selectedRecords.isEmpty ? 0 : GameRecord.bestOf(selectedRecords);
   }
 
   Future<void> _saveRecords() async {
@@ -61,6 +68,23 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
 
   void _sortRecordsByDate() {
     records.sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  List<GameRecord> _selectedDifficultyRecords() {
+    return records
+        .where((record) => record.difficulty == selectedDifficulty)
+        .toList();
+  }
+
+  void _selectDifficulty(GameDifficulty difficulty) {
+    setState(() {
+      selectedDifficulty = difficulty;
+      currentNumber = 1;
+      numbers = List.generate(difficulty.maxNumber, (index) => index + 1)
+        ..shuffle();
+      showPenalty = false;
+      _setBestRecord();
+    });
   }
 
   void startGame() {
@@ -80,7 +104,9 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           gamePaused = false;
           timeElapsed = 0;
           currentNumber = 1;
-          numbers = List.generate(25, (index) => index + 1)..shuffle();
+          numbers =
+              List.generate(selectedDifficulty.maxNumber, (index) => index + 1)
+                ..shuffle();
           countdown = 0;
         });
         startTimer();
@@ -104,11 +130,17 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
 
   void endGame({bool showRecord = true}) {
     stopTimer();
-    if (currentNumber > 25 && showRecord) {
+    if (currentNumber > selectedDifficulty.maxNumber && showRecord) {
       final record = formatTime(timeElapsed);
       final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       setState(() {
-        records.add(GameRecord(record: record, date: now));
+        records.add(
+          GameRecord(
+            record: record,
+            date: now,
+            difficulty: selectedDifficulty,
+          ),
+        );
         _sortRecordsByDate();
         _setBestRecord();
       });
@@ -141,7 +173,9 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
       setState(() {
         gameStarted = false;
         currentNumber = 1;
-        numbers = List.generate(25, (index) => index + 1)..shuffle();
+        numbers =
+            List.generate(selectedDifficulty.maxNumber, (index) => index + 1)
+              ..shuffle();
       });
     }
   }
@@ -155,10 +189,26 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         currentNumber++;
       });
 
-      if (currentNumber > 25) {
+      if (currentNumber > selectedDifficulty.maxNumber) {
         endGame();
       }
+    } else {
+      _applyWrongPenalty();
     }
+  }
+
+  void _applyWrongPenalty() {
+    penaltyTimer?.cancel();
+    setState(() {
+      timeElapsed += selectedDifficulty.wrongPenaltyMilliseconds;
+      showPenalty = true;
+    });
+    penaltyTimer = Timer(const Duration(milliseconds: 700), () {
+      if (!mounted) return;
+      setState(() {
+        showPenalty = false;
+      });
+    });
   }
 
   Future<void> _execVibrate() async {
@@ -171,6 +221,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   @override
   void dispose() {
     timer?.cancel();
+    penaltyTimer?.cancel();
     super.dispose();
   }
 
@@ -206,10 +257,14 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.list),
                     onPressed: () {
+                      final selectedRecords = _selectedDifficultyRecords();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => RecordScreen(records: records),
+                          builder: (context) => RecordScreen(
+                            records: selectedRecords,
+                            difficulty: selectedDifficulty,
+                          ),
                         ),
                       );
                     },
@@ -227,6 +282,11 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    _DifficultySelector(
+                      selectedDifficulty: selectedDifficulty,
+                      onSelected: _selectDifficulty,
+                    ),
+                    const SizedBox(height: 24),
                     Center(
                       child: ElevatedButton(
                         onPressed: startGame,
@@ -253,7 +313,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       const SizedBox(height: 15),
                       Center(
                         child: Text(
-                          'BEST $bestRecord',
+                          '${selectedDifficulty.label} BEST $bestRecord',
                           style: const TextStyle(
                             color: Color(0xFF54473F),
                             fontSize: 20,
@@ -302,10 +362,22 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                           fontSize: 50,
                         ),
                       ),
+                      if (showPenalty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          '+${formatTime(selectedDifficulty.wrongPenaltyMilliseconds)}',
+                          style: const TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       NumberGrid(
                         numbers: numbers,
                         gamePaused: gamePaused,
+                        crossAxisCount: selectedDifficulty.gridSize,
                         onNumberPressed: _onNumberPressed,
                       ),
                     ],
@@ -317,6 +389,43 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         ),
       ),
       bottomNavigationBar: const AdMobBanner(),
+    );
+  }
+}
+
+class _DifficultySelector extends StatelessWidget {
+  const _DifficultySelector({
+    required this.selectedDifficulty,
+    required this.onSelected,
+  });
+
+  final GameDifficulty selectedDifficulty;
+  final ValueChanged<GameDifficulty> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: GameDifficulty.values.map((difficulty) {
+        final selected = difficulty == selectedDifficulty;
+        return ChoiceChip(
+          label: Text(difficulty.label),
+          selected: selected,
+          onSelected: (_) => onSelected(difficulty),
+          selectedColor: const Color(0xFF54473F),
+          backgroundColor: const Color(0xFFCBD2A4),
+          labelStyle: TextStyle(
+            color: selected ? Colors.white : const Color(0xFF54473F),
+            fontWeight: FontWeight.w600,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFF9A7E6F)),
+          ),
+        );
+      }).toList(),
     );
   }
 }

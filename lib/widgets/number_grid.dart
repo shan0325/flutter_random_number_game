@@ -6,11 +6,13 @@ class NumberGrid extends StatelessWidget {
     super.key,
     required this.numbers,
     required this.gamePaused,
+    required this.crossAxisCount,
     required this.onNumberPressed,
   });
 
   final List<int?> numbers;
   final bool gamePaused;
+  final int crossAxisCount;
   final void Function(int number, int index) onNumberPressed;
 
   @override
@@ -18,7 +20,7 @@ class NumberGrid extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(maxWidth: 500),
       child: GridView.count(
-        crossAxisCount: 5,
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 5.0,
         mainAxisSpacing: 5.0,
         shrinkWrap: true,

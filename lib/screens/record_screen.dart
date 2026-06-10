@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../widgets/ad_mob_banner.dart';
 
 class RecordScreen extends StatefulWidget {
-  const RecordScreen({super.key, required this.records});
+  const RecordScreen({
+    super.key,
+    required this.records,
+    required this.difficulty,
+  });
 
   final List<GameRecord> records;
+  final GameDifficulty difficulty;
 
   @override
   State<RecordScreen> createState() => _RecordScreenState();
@@ -103,7 +109,7 @@ class _RecordScreenState extends State<RecordScreen> {
                 ),
               ),
               subtitle: Text(
-                record.date,
+                '${widget.difficulty.label} · ${record.date}',
                 style: const TextStyle(
                   color: Color(0xFF54473F),
                 ),
