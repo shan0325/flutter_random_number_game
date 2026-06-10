@@ -20,8 +20,10 @@
 - 기록 화면: `lib/screens/record_screen.dart`
 - 난이도 모델: `lib/models/game_difficulty.dart`
 - 기록 모델: `lib/models/game_record.dart`
+- 결과 모델: `lib/models/game_result.dart`
 - 기록 저장소: `lib/services/record_storage.dart`
 - 광고 배너: `lib/widgets/ad_mob_banner.dart`
+- 결과 다이얼로그: `lib/widgets/game_result_dialog.dart`
 - 숫자 그리드: `lib/widgets/number_grid.dart`
 
 ## 코드 구조 지침
@@ -59,6 +61,8 @@ normal::12.3::2026-06-11 10:20:30
 - Easy는 4x4, Normal은 5x5, Hard는 6x6 구성을 유지한다.
 - 오답 패널티는 난이도별 밀리초 값으로 관리한다.
 - 기록 저장과 최고 기록 계산은 난이도별로 분리한다.
+- 게임 완료 결과 계산은 `GameResult`에서 처리한다.
+- 결과 화면에는 기록, 난이도, 등급, BEST 대비 차이, 오답 수, 정확도를 표시한다.
 
 ## 테스트 지침
 

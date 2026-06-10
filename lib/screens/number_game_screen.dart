@@ -6,8 +6,10 @@ import 'package:vibration/vibration.dart';
 
 import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
+import '../models/game_result.dart';
 import '../services/record_storage.dart';
 import '../widgets/ad_mob_banner.dart';
+import '../widgets/game_result_dialog.dart';
 import '../widgets/number_grid.dart';
 import 'record_screen.dart';
 
@@ -37,6 +39,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   int countdown = 0;
   double bestRecord = 0;
   bool showPenalty = false;
+  int correctTapCount = 0;
+  int wrongTapCount = 0;
 
   @override
   void initState() {
@@ -104,6 +108,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           gamePaused = false;
           timeElapsed = 0;
           currentNumber = 1;
+          correctTapCount = 0;
+          wrongTapCount = 0;
           numbers =
               List.generate(selectedDifficulty.maxNumber, (index) => index + 1)
                 ..shuffle();
@@ -133,6 +139,13 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
     if (currentNumber > selectedDifficulty.maxNumber && showRecord) {
       final record = formatTime(timeElapsed);
       final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      final previousBest = bestRecord;
+      final result = GameResult(
+        elapsedMilliseconds: timeElapsed,
+        correctTapCount: correctTapCount,
+        wrongTapCount: wrongTapCount,
+        previousBest: previousBest,
+      );
       setState(() {
         records.add(
           GameRecord(
@@ -149,23 +162,31 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
       showDialog(
         context: context,
         builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('GAME OVER'),
-            content: Text(
-              record,
-              style: const TextStyle(fontSize: 30),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    gameStarted = false;
-                  });
-                },
-                child: const Text('OK'),
-              ),
-            ],
+          return GameResultDialog(
+            result: result,
+            difficulty: selectedDifficulty,
+            record: record,
+            onPlayAgain: () {
+              Navigator.of(context).pop();
+              setState(() {
+                gameStarted = false;
+              });
+            },
+            onViewRecords: () {
+              Navigator.of(context).pop();
+              setState(() {
+                gameStarted = false;
+              });
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RecordScreen(
+                    records: _selectedDifficultyRecords(),
+                    difficulty: selectedDifficulty,
+                  ),
+                ),
+              );
+            },
           );
         },
       );
@@ -187,6 +208,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
       setState(() {
         numbers[index] = null;
         currentNumber++;
+        correctTapCount++;
       });
 
       if (currentNumber > selectedDifficulty.maxNumber) {
@@ -200,6 +222,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   void _applyWrongPenalty() {
     penaltyTimer?.cancel();
     setState(() {
+      wrongTapCount++;
       timeElapsed += selectedDifficulty.wrongPenaltyMilliseconds;
       showPenalty = true;
     });
