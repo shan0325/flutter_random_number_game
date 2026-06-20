@@ -63,6 +63,9 @@ normal::12.3::2026-06-11 10:20:30
 - 기록 저장과 최고 기록 계산은 난이도별로 분리한다.
 - 게임 완료 결과 계산은 `GameResult`에서 처리한다.
 - 결과 화면에는 기록, 난이도, 등급, BEST 대비 차이, 오답 수, 정확도를 표시한다.
+- 게임 효과음 종류와 재생은 `GameSoundPlayer`에서 관리한다.
+- 사운드 설정은 `sound_enabled` key로 저장하며 기본값은 활성화 상태다.
+- 효과음 에셋을 변경하면 `tool/generate_sound_assets.dart`와 `pubspec.yaml`을 함께 확인한다.
 
 ## 테스트 지침
 
