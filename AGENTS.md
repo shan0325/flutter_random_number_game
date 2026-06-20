@@ -63,6 +63,17 @@ normal::12.3::2026-06-11 10:20:30
 - 기록 저장과 최고 기록 계산은 난이도별로 분리한다.
 - 게임 완료 결과 계산은 `GameResult`에서 처리한다.
 - 결과 화면에는 기록, 난이도, 등급, BEST 대비 차이, 오답 수, 정확도를 표시한다.
+- Today's Challenge는 기기 로컬 날짜와 `yyyyMMdd` 정수 seed를 사용한다.
+- 챌린지는 Normal 5x5 규칙을 사용하며 일반 기록과 별도로 저장한다.
+- 시작 화면은 CLASSIC / DAILY 모드별 정보만 선택적으로 표시한다.
+- 업적 정의와 조건은 `AchievementId`와 `AchievementEvaluator`에서 관리한다.
+- 업적 달성일과 완료 횟수는 일반/챌린지 기록과 별도 key로 저장한다.
+- 기존 기록에 없는 오답 수는 추정하지 않으며 Perfect Run을 소급
+  해제하지 않는다.
+- 챌린지 기록은 `daily_challenge_records` key와
+  `yyyy-MM-dd::milliseconds` 형식을 유지한다.
+- 현재/최고 연속 참여일과 최근 7일 상태는 저장된 챌린지 기록에서
+  계산하며 별도 streak 값을 저장하지 않는다.
 - 게임 효과음 종류와 재생은 `GameSoundPlayer`에서 관리한다.
 - 사운드 설정은 `sound_enabled` key로 저장하며 기본값은 활성화 상태다.
 - 효과음 에셋을 변경하면 `tool/generate_sound_assets.dart`와 `pubspec.yaml`을 함께 확인한다.

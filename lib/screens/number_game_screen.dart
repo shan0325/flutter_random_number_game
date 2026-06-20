@@ -1,31 +1,57 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vibration/vibration.dart';
 
+import '../models/achievement.dart';
+import '../models/achievement_progress.dart';
+import '../models/daily_challenge.dart';
+import '../models/daily_challenge_record.dart';
+import '../models/daily_challenge_stats.dart';
 import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../models/game_result.dart';
+import '../services/achievement_evaluator.dart';
+import '../services/achievement_storage.dart';
+import '../services/daily_challenge_storage.dart';
 import '../services/game_sound_player.dart';
 import '../services/record_storage.dart';
 import '../services/sound_preference_storage.dart';
 import '../widgets/ad_mob_banner.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/number_grid.dart';
+import 'achievement_screen.dart';
 import 'record_screen.dart';
+
+enum GameSessionType {
+  normal,
+  dailyChallenge,
+}
+
+enum StartMode {
+  classic,
+  daily,
+}
 
 class NumberGameScreen extends StatefulWidget {
   const NumberGameScreen({
     super.key,
     this.recordStorage,
+    this.dailyChallengeStorage,
+    this.achievementStorage,
     this.gameSoundPlayer,
     this.soundPreferenceStorage,
+    this.dateProvider,
   });
 
   final RecordStorage? recordStorage;
+  final DailyChallengeStorage? dailyChallengeStorage;
+  final AchievementStorage? achievementStorage;
   final GameSoundPlayer? gameSoundPlayer;
   final SoundPreferenceStorage? soundPreferenceStorage;
+  final DateTime Function()? dateProvider;
 
   @override
   State<NumberGameScreen> createState() => _NumberGameScreenState();
@@ -33,11 +59,19 @@ class NumberGameScreen extends StatefulWidget {
 
 class _NumberGameScreenState extends State<NumberGameScreen> {
   late final RecordStorage _recordStorage;
+  late final DailyChallengeStorage _dailyChallengeStorage;
+  late final AchievementStorage _achievementStorage;
+  final AchievementEvaluator _achievementEvaluator = AchievementEvaluator();
   late final GameSoundPlayer _gameSoundPlayer;
   late final bool _ownsGameSoundPlayer;
   late final SoundPreferenceStorage _soundPreferenceStorage;
+  late final DateTime Function() _dateProvider;
+  Future<void> _achievementRefresh = Future.value();
 
   GameDifficulty selectedDifficulty = GameDifficulty.normal;
+  StartMode startMode = StartMode.classic;
+  GameSessionType sessionType = GameSessionType.normal;
+  DailyChallenge? activeDailyChallenge;
   List<int?> numbers =
       List.generate(GameDifficulty.normal.maxNumber, (index) => index + 1)
         ..shuffle();
@@ -55,17 +89,48 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   int correctTapCount = 0;
   int wrongTapCount = 0;
   bool soundEnabled = true;
+  int? todayChallengeBestMilliseconds;
+  List<DailyChallengeRecord> dailyChallengeRecords = [];
+  late DailyChallengeStats dailyChallengeStats;
+  AchievementState achievementState = AchievementState();
 
   @override
   void initState() {
     super.initState();
     _recordStorage = widget.recordStorage ?? RecordStorage();
+    _dailyChallengeStorage =
+        widget.dailyChallengeStorage ?? DailyChallengeStorage();
+    _achievementStorage = widget.achievementStorage ?? AchievementStorage();
     _ownsGameSoundPlayer = widget.gameSoundPlayer == null;
     _gameSoundPlayer = widget.gameSoundPlayer ?? AssetGameSoundPlayer();
     _soundPreferenceStorage = widget.soundPreferenceStorage ??
         SharedPreferencesSoundPreferenceStorage();
+    _dateProvider = widget.dateProvider ?? DateTime.now;
+    dailyChallengeStats = DailyChallengeStats.fromRecords(
+      const [],
+      today: _dateProvider(),
+    );
     _loadRecords();
     _loadSoundPreference();
+    _loadTodayChallengeBest();
+  }
+
+  Future<void> _loadTodayChallengeBest() async {
+    try {
+      final challenge = DailyChallenge.forDate(_dateProvider());
+      final loadedRecords = await _dailyChallengeStorage.loadRecords();
+      if (!mounted) return;
+
+      setState(() {
+        _applyDailyChallengeRecords(
+          loadedRecords,
+          today: challenge.date,
+        );
+      });
+      unawaited(_refreshAchievementState());
+    } catch (error) {
+      debugPrint('Daily challenge best failed to load: $error');
+    }
   }
 
   Future<void> _loadSoundPreference() async {
@@ -86,6 +151,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
       _sortRecordsByDate();
       _setBestRecord();
     });
+    unawaited(_refreshAchievementState());
   }
 
   void _setBestRecord() {
@@ -110,6 +176,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
 
   void _selectDifficulty(GameDifficulty difficulty) {
     setState(() {
+      sessionType = GameSessionType.normal;
+      activeDailyChallenge = null;
       selectedDifficulty = difficulty;
       currentNumber = 1;
       numbers = List.generate(difficulty.maxNumber, (index) => index + 1)
@@ -119,7 +187,44 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
     });
   }
 
+  void _selectStartMode(StartMode mode) {
+    setState(() {
+      startMode = mode;
+    });
+  }
+
   void startGame() {
+    sessionType = GameSessionType.normal;
+    activeDailyChallenge = null;
+    _startCountdown();
+  }
+
+  Future<void> _startDailyChallenge() async {
+    final challenge = DailyChallenge.forDate(_dateProvider());
+    List<DailyChallengeRecord> loadedRecords = [];
+    try {
+      loadedRecords = await _dailyChallengeStorage.loadRecords();
+    } catch (error) {
+      debugPrint('Daily challenge best failed to load: $error');
+    }
+    if (!mounted) return;
+
+    setState(() {
+      sessionType = GameSessionType.dailyChallenge;
+      activeDailyChallenge = challenge;
+      selectedDifficulty = GameDifficulty.normal;
+      currentNumber = 1;
+      numbers = challenge.numbers.map<int?>((number) => number).toList();
+      showPenalty = false;
+      _applyDailyChallengeRecords(
+        loadedRecords,
+        today: challenge.date,
+      );
+    });
+    _startCountdown();
+  }
+
+  void _startCountdown() {
     countdownTimer?.cancel();
     setState(() {
       countdown = 3;
@@ -146,9 +251,14 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           currentNumber = 1;
           correctTapCount = 0;
           wrongTapCount = 0;
-          numbers =
-              List.generate(selectedDifficulty.maxNumber, (index) => index + 1)
-                ..shuffle();
+          numbers = sessionType == GameSessionType.dailyChallenge
+              ? activeDailyChallenge!.numbers
+                  .map<int?>((number) => number)
+                  .toList()
+              : (List<int?>.generate(
+                  selectedDifficulty.maxNumber,
+                  (index) => index + 1,
+                )..shuffle());
           countdown = 0;
         });
         startTimer();
@@ -175,26 +285,59 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
     if (currentNumber > selectedDifficulty.maxNumber && showRecord) {
       _playSound(GameSoundEffect.complete);
       final record = formatTime(timeElapsed);
-      final now = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      final previousBest = bestRecord;
+      final now = DateFormat(
+        'yyyy-MM-dd HH:mm:ss',
+      ).format(_dateProvider());
+      final isDailyChallenge = sessionType == GameSessionType.dailyChallenge &&
+          activeDailyChallenge != null;
+      final previousBest = isDailyChallenge
+          ? (todayChallengeBestMilliseconds ?? 0) / 1000
+          : bestRecord;
       final result = GameResult(
         elapsedMilliseconds: timeElapsed,
         correctTapCount: correctTapCount,
         wrongTapCount: wrongTapCount,
         previousBest: previousBest,
       );
-      setState(() {
-        records.add(
-          GameRecord(
-            record: record,
-            date: now,
-            difficulty: selectedDifficulty,
+      if (isDailyChallenge) {
+        final challenge = activeDailyChallenge!;
+        final isFaster = todayChallengeBestMilliseconds == null ||
+            timeElapsed < todayChallengeBestMilliseconds!;
+        setState(() {
+          _upsertDailyChallengeRecord(
+            challenge.dateKey,
+            timeElapsed,
+            replaceExisting: isFaster,
+          );
+          _applyDailyChallengeRecords(
+            dailyChallengeRecords,
+            today: challenge.date,
+          );
+        });
+        unawaited(
+          _dailyChallengeStorage.saveBest(
+            challenge.dateKey,
+            timeElapsed,
           ),
         );
-        _sortRecordsByDate();
-        _setBestRecord();
-      });
-      _saveRecords();
+      } else {
+        setState(() {
+          records.add(
+            GameRecord(
+              record: record,
+              date: now,
+              difficulty: selectedDifficulty,
+            ),
+          );
+          _sortRecordsByDate();
+          _setBestRecord();
+        });
+        unawaited(_saveRecords());
+      }
+      final unlockedAchievements = _evaluateAchievements(
+        isDailyChallenge: isDailyChallenge,
+        now: now,
+      );
 
       showDialog(
         context: context,
@@ -203,17 +346,18 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
             result: result,
             difficulty: selectedDifficulty,
             record: record,
+            modeLabel: isDailyChallenge ? "Today's Challenge" : null,
+            showRecords: !isDailyChallenge,
+            streakCount:
+                isDailyChallenge ? dailyChallengeStats.currentStreak : null,
+            unlockedAchievements: unlockedAchievements,
             onPlayAgain: () {
               Navigator.of(context).pop();
-              setState(() {
-                gameStarted = false;
-              });
+              _returnToStart();
             },
             onViewRecords: () {
               Navigator.of(context).pop();
-              setState(() {
-                gameStarted = false;
-              });
+              _returnToStart();
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -228,14 +372,141 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         },
       );
     } else {
-      setState(() {
-        gameStarted = false;
-        currentNumber = 1;
-        numbers =
-            List.generate(selectedDifficulty.maxNumber, (index) => index + 1)
-              ..shuffle();
-      });
+      _returnToStart();
     }
+  }
+
+  void _returnToStart() {
+    setState(() {
+      gameStarted = false;
+      currentNumber = 1;
+      numbers =
+          List.generate(selectedDifficulty.maxNumber, (index) => index + 1)
+            ..shuffle();
+    });
+    unawaited(_loadTodayChallengeBest());
+  }
+
+  void _applyDailyChallengeRecords(
+    List<DailyChallengeRecord> loadedRecords, {
+    required DateTime today,
+  }) {
+    dailyChallengeRecords = [...loadedRecords];
+    final todayKey = DailyChallenge.forDate(today).dateKey;
+    todayChallengeBestMilliseconds = null;
+    for (final record in dailyChallengeRecords) {
+      if (record.dateKey == todayKey) {
+        todayChallengeBestMilliseconds = record.bestMilliseconds;
+        break;
+      }
+    }
+    dailyChallengeStats = DailyChallengeStats.fromRecords(
+      dailyChallengeRecords,
+      today: today,
+    );
+  }
+
+  void _upsertDailyChallengeRecord(
+    String dateKey,
+    int elapsedMilliseconds, {
+    required bool replaceExisting,
+  }) {
+    final index = dailyChallengeRecords.indexWhere(
+      (record) => record.dateKey == dateKey,
+    );
+    if (index >= 0) {
+      if (replaceExisting) {
+        dailyChallengeRecords[index] = DailyChallengeRecord(
+          dateKey: dateKey,
+          bestMilliseconds: elapsedMilliseconds,
+        );
+      }
+      return;
+    }
+    dailyChallengeRecords.add(
+      DailyChallengeRecord(
+        dateKey: dateKey,
+        bestMilliseconds: elapsedMilliseconds,
+      ),
+    );
+  }
+
+  Future<void> _refreshAchievementState() {
+    _achievementRefresh = _achievementRefresh.then((_) async {
+      final updated = await _achievementStorage.backfill(
+        normalRecords: records,
+        dailyRecords: dailyChallengeRecords,
+        dailyStats: dailyChallengeStats,
+        now: _dateProvider(),
+      );
+      if (!mounted) return;
+      setState(() {
+        achievementState = updated;
+      });
+    });
+    return _achievementRefresh;
+  }
+
+  List<AchievementId> _evaluateAchievements({
+    required bool isDailyChallenge,
+    required String now,
+  }) {
+    final completedGames = max(
+      achievementState.completedGames + 1,
+      records.length + dailyChallengeRecords.length,
+    );
+    final newUnlocks = _achievementEvaluator.evaluate(
+      AchievementEvaluationContext(
+        difficulty: selectedDifficulty,
+        elapsedMilliseconds: timeElapsed,
+        wrongTapCount: wrongTapCount,
+        isDailyChallenge: isDailyChallenge,
+        currentStreak: dailyChallengeStats.currentStreak,
+        completedGames: completedGames,
+      ),
+      unlockedIds: achievementState.unlockedIds,
+    );
+    final unlockDates = Map<AchievementId, String>.of(
+      achievementState.unlockDates,
+    );
+    for (final achievement in newUnlocks) {
+      unlockDates[achievement] = now;
+    }
+    achievementState = AchievementState(
+      unlockDates: unlockDates,
+      completedGames: completedGames,
+    );
+    final stateToSave = achievementState;
+    _achievementRefresh = _achievementRefresh.then(
+      (_) => _achievementStorage.saveState(stateToSave),
+    );
+
+    return AchievementId.values
+        .where(newUnlocks.contains)
+        .toList(growable: false);
+  }
+
+  List<AchievementProgress> _achievementProgress() {
+    return _achievementEvaluator.buildProgress(
+      state: achievementState,
+      normalRecords: records,
+      dailyRecords: dailyChallengeRecords,
+      dailyStats: dailyChallengeStats,
+    );
+  }
+
+  Future<void> _openAchievements() async {
+    await _refreshAchievementState();
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AchievementScreen(
+          achievements: _achievementProgress(),
+        ),
+      ),
+    );
   }
 
   void _onNumberPressed(int number, int index) {
@@ -359,6 +630,22 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
+                        key: const Key('achievements-button'),
+                        icon: const Icon(Icons.emoji_events),
+                        tooltip: 'Achievements',
+                        onPressed: _openAchievements,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                          backgroundColor: const Color(0xFF9A7E6F),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
                         icon: const Icon(Icons.list),
                         tooltip: 'Records',
                         onPressed: () {
@@ -386,49 +673,53 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                     ],
                   ),
                 ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _DifficultySelector(
-                      selectedDifficulty: selectedDifficulty,
-                      onSelected: _selectDifficulty,
-                    ),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: startGame,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 50,
-                            vertical: 20,
+                Center(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 52, bottom: 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 24),
+                          SegmentedButton<StartMode>(
+                            segments: const [
+                              ButtonSegment(
+                                value: StartMode.classic,
+                                label: Text('CLASSIC'),
+                              ),
+                              ButtonSegment(
+                                value: StartMode.daily,
+                                label: Text('DAILY'),
+                              ),
+                            ],
+                            selected: {startMode},
+                            showSelectedIcon: false,
+                            onSelectionChanged: (selection) {
+                              _selectStartMode(selection.first);
+                            },
+                            style: SegmentedButton.styleFrom(
+                              fixedSize: const Size(128, 42),
+                              backgroundColor: const Color(0xFFE3E7C8),
+                              foregroundColor: const Color(0xFF54473F),
+                              selectedBackgroundColor: const Color(0xFF5F5147),
+                              selectedForegroundColor: Colors.white,
+                              side: const BorderSide(
+                                color: Color(0xFF9A7E6F),
+                              ),
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                          backgroundColor: const Color(0xFF54473F),
-                          foregroundColor: Colors.white,
-                          textStyle: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text('START'),
+                          const SizedBox(height: 28),
+                          if (startMode == StartMode.classic)
+                            _buildClassicStartContent()
+                          else
+                            _buildDailyStartContent(),
+                        ],
                       ),
                     ),
-                    if (bestRecord != 0) ...[
-                      const SizedBox(height: 15),
-                      Center(
-                        child: Text(
-                          '${selectedDifficulty.label} BEST $bestRecord',
-                          style: const TextStyle(
-                            color: Color(0xFF54473F),
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ] else if (countdown > 0) ...[
                 Center(
@@ -469,6 +760,94 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         ),
       ),
       bottomNavigationBar: const AdMobBanner(),
+    );
+  }
+
+  Widget _buildClassicStartContent() {
+    return Column(
+      key: const ValueKey(StartMode.classic),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _DifficultySelector(
+          selectedDifficulty: selectedDifficulty,
+          onSelected: _selectDifficulty,
+        ),
+        const SizedBox(height: 24),
+        _buildStartButton(onPressed: startGame),
+        if (bestRecord != 0) ...[
+          const SizedBox(height: 15),
+          Text(
+            '${selectedDifficulty.label} BEST $bestRecord',
+            style: const TextStyle(
+              color: Color(0xFF54473F),
+              fontSize: 20,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDailyStartContent() {
+    return Column(
+      key: const ValueKey(StartMode.daily),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.today,
+              size: 20,
+              color: Color(0xFF54473F),
+            ),
+            SizedBox(width: 8),
+            Text(
+              "TODAY'S CHALLENGE",
+              style: TextStyle(
+                color: Color(0xFF54473F),
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _buildStartButton(onPressed: _startDailyChallenge),
+        const SizedBox(height: 14),
+        Text(
+          todayChallengeBestMilliseconds == null
+              ? "TODAY'S BEST --"
+              : "TODAY'S BEST ${formatTime(todayChallengeBestMilliseconds!)}",
+          style: const TextStyle(
+            color: Color(0xFF54473F),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _DailyChallengeSummary(stats: dailyChallengeStats),
+      ],
+    );
+  }
+
+  Widget _buildStartButton({required VoidCallback onPressed}) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(192, 76),
+        backgroundColor: const Color(0xFF54473F),
+        foregroundColor: Colors.white,
+        textStyle: const TextStyle(
+          fontSize: 30,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 0,
+      ),
+      child: const Text('START'),
     );
   }
 
@@ -583,6 +962,95 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DailyChallengeSummary extends StatelessWidget {
+  const _DailyChallengeSummary({required this.stats});
+
+  final DailyChallengeStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 280,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'STREAK ${stats.currentStreak}',
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF54473F),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'BEST ${stats.bestStreak}',
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF54473F),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: stats.recentDays.map((day) {
+              return SizedBox(
+                key: Key('daily-day-${day.dateKey}'),
+                width: 28,
+                height: 42,
+                child: Column(
+                  children: [
+                    Text(
+                      day.weekdayLabel,
+                      style: const TextStyle(
+                        color: Color(0xFF54473F),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: day.completed
+                            ? const Color(0xFF5F5147)
+                            : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF9A7E6F),
+                        ),
+                      ),
+                      child: day.completed
+                          ? const Icon(
+                              Icons.check,
+                              size: 14,
+                              color: Colors.white,
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }
