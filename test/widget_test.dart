@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:onetotwentyfive/app.dart';
 import 'package:onetotwentyfive/models/achievement.dart';
+import 'package:onetotwentyfive/models/app_theme_id.dart';
 import 'package:onetotwentyfive/models/daily_challenge_record.dart';
 import 'package:onetotwentyfive/models/daily_challenge_stats.dart';
 import 'package:onetotwentyfive/models/game_record.dart';
@@ -11,6 +12,7 @@ import 'package:onetotwentyfive/services/daily_challenge_storage.dart';
 import 'package:onetotwentyfive/services/game_sound_player.dart';
 import 'package:onetotwentyfive/services/record_storage.dart';
 import 'package:onetotwentyfive/services/sound_preference_storage.dart';
+import 'package:onetotwentyfive/services/theme_preference_storage.dart';
 
 void main() {
   testWidgets('shows the game start screen', (WidgetTester tester) async {
@@ -24,6 +26,74 @@ void main() {
     expect(find.text('CLASSIC'), findsOneWidget);
     expect(find.text('DAILY'), findsOneWidget);
     expect(find.text("TODAY'S BEST"), findsNothing);
+  });
+
+  testWidgets('theme picker shows locked theme requirements', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        achievementStorage: _FakeAchievementStorage(),
+        themePreferenceStorage: _FakeThemePreferenceStorage(),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('theme-picker-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Themes'), findsOneWidget);
+    expect(find.text('Unlock 3 achievements'), findsOneWidget);
+    expect(
+      find.text('Complete the 7 Day Streak achievement'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('selects and persists an unlocked Neon theme', (
+    WidgetTester tester,
+  ) async {
+    final themeStorage = _FakeThemePreferenceStorage();
+    final achievementStorage = _FakeAchievementStorage(
+      state: AchievementState(
+        unlockDates: {
+          AchievementId.sevenDayStreak: '2026-06-21 10:00:00',
+        },
+      ),
+    );
+
+    await tester.pumpWidget(
+      MyApp(
+        achievementStorage: achievementStorage,
+        themePreferenceStorage: themeStorage,
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('theme-picker-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('theme-neon')));
+    await tester.pumpAndSettle();
+
+    expect(themeStorage.savedTheme, AppThemeId.neon);
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(materialApp.theme!.scaffoldBackgroundColor, const Color(0xFFF4F8F7));
+  });
+
+  testWidgets('falls back to Classic when saved theme is locked', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        achievementStorage: _FakeAchievementStorage(),
+        themePreferenceStorage: _FakeThemePreferenceStorage(
+          loadedTheme: AppThemeId.neon,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(materialApp.theme!.scaffoldBackgroundColor, const Color(0xFFE9EED9));
   });
 
   testWidgets('shows only daily challenge content in daily mode', (
@@ -141,6 +211,38 @@ void main() {
     }
 
     expect(soundPlayer.effects.last, GameSoundEffect.complete);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('saves tap metrics with a completed classic game', (
+    WidgetTester tester,
+  ) async {
+    final recordStorage = _FakeRecordStorage();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NumberGameScreen(
+          achievementStorage: _FakeAchievementStorage(),
+          gameSoundPlayer: _FakeGameSoundPlayer(),
+          recordStorage: recordStorage,
+          soundPreferenceStorage: _FakeSoundPreferenceStorage(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Easy'));
+    await _startGame(tester);
+    await tester.tap(find.text('2'));
+    await tester.pump();
+    for (var number = 1; number <= 16; number++) {
+      await tester.tap(find.text('$number'));
+      await tester.pump();
+    }
+
+    final savedRecord = recordStorage.lastSaved.single;
+    expect(savedRecord.wrongTapCount, 1);
+    expect(savedRecord.totalTapCount, 17);
+
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -387,6 +489,30 @@ void main() {
     );
     expect(find.text('Veteran'), findsOneWidget);
   });
+
+  testWidgets('opens the statistics screen from the analytics button', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NumberGameScreen(
+          achievementStorage: _FakeAchievementStorage(),
+          gameSoundPlayer: _FakeGameSoundPlayer(),
+          recordStorage: _FakeRecordStorage(),
+          soundPreferenceStorage: _FakeSoundPreferenceStorage(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('statistics-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Statistics'), findsOneWidget);
+    expect(find.text('No Easy records yet'), findsOneWidget);
+    expect(find.text('Daily completions'), findsOneWidget);
+    expect(find.text('Achievements'), findsOneWidget);
+  });
 }
 
 Future<void> _startGame(WidgetTester tester) async {
@@ -456,6 +582,7 @@ DailyChallengeRecord _dailyRecord(String dateKey) {
 
 class _FakeRecordStorage implements RecordStorage {
   int saveCount = 0;
+  List<GameRecord> lastSaved = [];
 
   @override
   Future<List<GameRecord>> loadRecords() async => [];
@@ -463,6 +590,7 @@ class _FakeRecordStorage implements RecordStorage {
   @override
   Future<void> saveRecords(List<GameRecord> records) async {
     saveCount++;
+    lastSaved = [...records];
   }
 }
 
@@ -488,5 +616,20 @@ class _FakeAchievementStorage implements AchievementStorage {
     required DateTime now,
   }) async {
     return state;
+  }
+}
+
+class _FakeThemePreferenceStorage implements ThemePreferenceStorage {
+  _FakeThemePreferenceStorage({this.loadedTheme = AppThemeId.classic});
+
+  final AppThemeId loadedTheme;
+  AppThemeId? savedTheme;
+
+  @override
+  Future<AppThemeId> loadTheme() async => loadedTheme;
+
+  @override
+  Future<void> saveTheme(AppThemeId theme) async {
+    savedTheme = theme;
   }
 }

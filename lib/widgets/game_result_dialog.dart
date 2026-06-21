@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/achievement.dart';
 import '../models/game_difficulty.dart';
 import '../models/game_result.dart';
+import '../theme/game_theme.dart';
 
 class GameResultDialog extends StatelessWidget {
   const GameResultDialog({
@@ -30,7 +31,9 @@ class GameResultDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.gameColors;
     return AlertDialog(
+      backgroundColor: colors.surface,
       title: Text(result.isNewBest ? 'NEW BEST!' : 'GAME OVER'),
       content: SingleChildScrollView(
         child: Column(
@@ -63,10 +66,10 @@ class GameResultDialog extends StatelessWidget {
             ),
             if (unlockedAchievements.isNotEmpty) ...[
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Achievement Unlocked',
                 style: TextStyle(
-                  color: Color(0xFF8B6F47),
+                  color: colors.progress,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -74,8 +77,8 @@ class GameResultDialog extends StatelessWidget {
               ...unlockedAchievements.map(
                 (achievement) => Text(
                   achievement.title,
-                  style: const TextStyle(
-                    color: Color(0xFF54473F),
+                  style: TextStyle(
+                    color: colors.text,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -110,6 +113,7 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.gameColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -117,15 +121,15 @@ class _ResultRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF54473F)),
+            style: TextStyle(color: colors.text),
           ),
           const SizedBox(width: 16),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: Color(0xFF54473F),
+              style: TextStyle(
+                color: colors.text,
                 fontWeight: FontWeight.w700,
               ),
             ),

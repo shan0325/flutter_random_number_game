@@ -7,6 +7,7 @@ import 'package:vibration/vibration.dart';
 
 import '../models/achievement.dart';
 import '../models/achievement_progress.dart';
+import '../models/app_theme_id.dart';
 import '../models/daily_challenge.dart';
 import '../models/daily_challenge_record.dart';
 import '../models/daily_challenge_stats.dart';
@@ -19,11 +20,14 @@ import '../services/daily_challenge_storage.dart';
 import '../services/game_sound_player.dart';
 import '../services/record_storage.dart';
 import '../services/sound_preference_storage.dart';
+import '../theme/game_theme.dart';
 import '../widgets/ad_mob_banner.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/number_grid.dart';
+import '../widgets/theme_picker_sheet.dart';
 import 'achievement_screen.dart';
 import 'record_screen.dart';
+import 'statistics_screen.dart';
 
 enum GameSessionType {
   normal,
@@ -44,6 +48,8 @@ class NumberGameScreen extends StatefulWidget {
     this.gameSoundPlayer,
     this.soundPreferenceStorage,
     this.dateProvider,
+    this.selectedTheme = AppThemeId.classic,
+    this.onThemeSelected,
   });
 
   final RecordStorage? recordStorage;
@@ -52,6 +58,8 @@ class NumberGameScreen extends StatefulWidget {
   final GameSoundPlayer? gameSoundPlayer;
   final SoundPreferenceStorage? soundPreferenceStorage;
   final DateTime Function()? dateProvider;
+  final AppThemeId selectedTheme;
+  final ValueChanged<AppThemeId>? onThemeSelected;
 
   @override
   State<NumberGameScreen> createState() => _NumberGameScreenState();
@@ -327,6 +335,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
               record: record,
               date: now,
               difficulty: selectedDifficulty,
+              wrongTapCount: wrongTapCount,
+              totalTapCount: correctTapCount + wrongTapCount,
             ),
           );
           _sortRecordsByDate();
@@ -509,6 +519,41 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
     );
   }
 
+  Future<void> _openStatistics() async {
+    await _refreshAchievementState();
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StatisticsScreen(
+          records: records,
+          dailyCompletionCount: dailyChallengeRecords.length,
+          bestDailyStreak: dailyChallengeStats.bestStreak,
+          unlockedAchievementCount: achievementState.unlockedIds.length,
+          totalAchievementCount: AchievementId.values.length,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openThemePicker() async {
+    await _refreshAchievementState();
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => ThemePickerSheet(
+        selectedTheme: widget.selectedTheme,
+        unlockedAchievements: achievementState.unlockedIds,
+        onSelected: (themeId) {
+          widget.onThemeSelected?.call(themeId);
+          Navigator.pop(sheetContext);
+        },
+      ),
+    );
+  }
+
   void _onNumberPressed(int number, int index) {
     if (number == currentNumber) {
       _execVibrate();
@@ -586,20 +631,21 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final colors = context.gameColors;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFCBD2A4),
-        title: const Text(
+        backgroundColor: colors.appBar,
+        title: Text(
           '1to25',
           style: TextStyle(
-            color: Color(0xFF54473F),
+            color: colors.text,
           ),
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFE9EED9),
+        decoration: BoxDecoration(
+          color: colors.screen,
         ),
         child: Padding(
           padding: EdgeInsets.all(isLandscape ? 12 : 20),
@@ -623,8 +669,24 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                             horizontal: 10,
                             vertical: 10,
                           ),
-                          backgroundColor: const Color(0xFF9A7E6F),
-                          foregroundColor: Colors.white,
+                          backgroundColor: colors.secondary,
+                          foregroundColor: colors.onSecondary,
+                          elevation: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        key: const Key('theme-picker-button'),
+                        icon: const Icon(Icons.palette_outlined),
+                        tooltip: 'Themes',
+                        onPressed: _openThemePicker,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                          backgroundColor: colors.secondary,
+                          foregroundColor: colors.onSecondary,
                           elevation: 0,
                         ),
                       ),
@@ -639,8 +701,24 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                             horizontal: 10,
                             vertical: 10,
                           ),
-                          backgroundColor: const Color(0xFF9A7E6F),
-                          foregroundColor: Colors.white,
+                          backgroundColor: colors.secondary,
+                          foregroundColor: colors.onSecondary,
+                          elevation: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        key: const Key('statistics-button'),
+                        icon: const Icon(Icons.insights),
+                        tooltip: 'Statistics',
+                        onPressed: _openStatistics,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                          backgroundColor: colors.secondary,
+                          foregroundColor: colors.onSecondary,
                           elevation: 0,
                         ),
                       ),
@@ -665,8 +743,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                             horizontal: 10,
                             vertical: 10,
                           ),
-                          backgroundColor: const Color(0xFF9A7E6F),
-                          foregroundColor: Colors.white,
+                          backgroundColor: colors.secondary,
+                          foregroundColor: colors.onSecondary,
                           elevation: 0,
                         ),
                       ),
@@ -699,13 +777,11 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                             },
                             style: SegmentedButton.styleFrom(
                               fixedSize: const Size(128, 42),
-                              backgroundColor: const Color(0xFFE3E7C8),
-                              foregroundColor: const Color(0xFF54473F),
-                              selectedBackgroundColor: const Color(0xFF5F5147),
-                              selectedForegroundColor: Colors.white,
-                              side: const BorderSide(
-                                color: Color(0xFF9A7E6F),
-                              ),
+                              backgroundColor: colors.surface,
+                              foregroundColor: colors.text,
+                              selectedBackgroundColor: colors.primary,
+                              selectedForegroundColor: colors.onPrimary,
+                              side: BorderSide(color: colors.border),
                               textStyle: const TextStyle(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -725,8 +801,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                 Center(
                   child: Text(
                     '$countdown',
-                    style: const TextStyle(
-                      color: Color(0xFF54473F),
+                    style: TextStyle(
+                      color: colors.text,
                       fontSize: 80,
                       fontWeight: FontWeight.bold,
                     ),
@@ -746,8 +822,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                           horizontal: 10,
                           vertical: 10,
                         ),
-                        backgroundColor: const Color(0xFF9A7E6F),
-                        foregroundColor: Colors.white,
+                        backgroundColor: colors.secondary,
+                        foregroundColor: colors.onSecondary,
                         elevation: 0,
                       ),
                     ),
@@ -764,6 +840,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   }
 
   Widget _buildClassicStartContent() {
+    final colors = context.gameColors;
     return Column(
       key: const ValueKey(StartMode.classic),
       mainAxisSize: MainAxisSize.min,
@@ -778,8 +855,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           const SizedBox(height: 15),
           Text(
             '${selectedDifficulty.label} BEST $bestRecord',
-            style: const TextStyle(
-              color: Color(0xFF54473F),
+            style: TextStyle(
+              color: colors.text,
               fontSize: 20,
             ),
           ),
@@ -789,23 +866,24 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   }
 
   Widget _buildDailyStartContent() {
+    final colors = context.gameColors;
     return Column(
       key: const ValueKey(StartMode.daily),
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Row(
+        Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.today,
               size: 20,
-              color: Color(0xFF54473F),
+              color: colors.text,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               "TODAY'S CHALLENGE",
               style: TextStyle(
-                color: Color(0xFF54473F),
+                color: colors.text,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
@@ -819,8 +897,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           todayChallengeBestMilliseconds == null
               ? "TODAY'S BEST --"
               : "TODAY'S BEST ${formatTime(todayChallengeBestMilliseconds!)}",
-          style: const TextStyle(
-            color: Color(0xFF54473F),
+          style: TextStyle(
+            color: colors.text,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -832,12 +910,13 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   }
 
   Widget _buildStartButton({required VoidCallback onPressed}) {
+    final colors = context.gameColors;
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(192, 76),
-        backgroundColor: const Color(0xFF54473F),
-        foregroundColor: Colors.white,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         textStyle: const TextStyle(
           fontSize: 30,
           fontWeight: FontWeight.w500,
@@ -852,14 +931,15 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   }
 
   Widget _buildPortraitGameContent() {
+    final colors = context.gameColors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             formatTime(timeElapsed),
-            style: const TextStyle(
-              color: Color(0xFF54473F),
+            style: TextStyle(
+              color: colors.text,
               fontSize: 50,
             ),
           ),
@@ -871,8 +951,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                 duration: const Duration(milliseconds: 120),
                 child: Text(
                   '+${formatTime(selectedDifficulty.wrongPenaltyMilliseconds)}',
-                  style: const TextStyle(
-                    color: Colors.redAccent,
+                  style: TextStyle(
+                    color: colors.penalty,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
@@ -893,6 +973,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
   }
 
   Widget _buildLandscapeGameContent() {
+    final colors = context.gameColors;
     return Row(
       children: [
         Expanded(
@@ -909,8 +990,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       horizontal: 10,
                       vertical: 10,
                     ),
-                    backgroundColor: const Color(0xFF9A7E6F),
-                    foregroundColor: Colors.white,
+                    backgroundColor: colors.secondary,
+                    foregroundColor: colors.onSecondary,
                     elevation: 0,
                   ),
                 ),
@@ -921,8 +1002,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                   children: [
                     Text(
                       formatTime(timeElapsed),
-                      style: const TextStyle(
-                        color: Color(0xFF54473F),
+                      style: TextStyle(
+                        color: colors.text,
                         fontSize: 42,
                       ),
                     ),
@@ -934,8 +1015,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                           duration: const Duration(milliseconds: 120),
                           child: Text(
                             '+${formatTime(selectedDifficulty.wrongPenaltyMilliseconds)}',
-                            style: const TextStyle(
-                              color: Colors.redAccent,
+                            style: TextStyle(
+                              color: colors.penalty,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -973,6 +1054,7 @@ class _DailyChallengeSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.gameColors;
     return SizedBox(
       width: 280,
       child: Column(
@@ -984,8 +1066,8 @@ class _DailyChallengeSummary extends StatelessWidget {
                   'STREAK ${stats.currentStreak}',
                   maxLines: 1,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF54473F),
+                  style: TextStyle(
+                    color: colors.text,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -996,8 +1078,8 @@ class _DailyChallengeSummary extends StatelessWidget {
                   'BEST ${stats.bestStreak}',
                   maxLines: 1,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF54473F),
+                  style: TextStyle(
+                    color: colors.text,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1017,8 +1099,8 @@ class _DailyChallengeSummary extends StatelessWidget {
                   children: [
                     Text(
                       day.weekdayLabel,
-                      style: const TextStyle(
-                        color: Color(0xFF54473F),
+                      style: TextStyle(
+                        color: colors.text,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1028,19 +1110,18 @@ class _DailyChallengeSummary extends StatelessWidget {
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
-                        color: day.completed
-                            ? const Color(0xFF5F5147)
-                            : Colors.transparent,
+                        color:
+                            day.completed ? colors.primary : Colors.transparent,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFF9A7E6F),
+                          color: colors.border,
                         ),
                       ),
                       child: day.completed
-                          ? const Icon(
+                          ? Icon(
                               Icons.check,
                               size: 14,
-                              color: Colors.white,
+                              color: colors.onPrimary,
                             )
                           : null,
                     ),
@@ -1066,6 +1147,7 @@ class _DifficultySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.gameColors;
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: 8,
@@ -1077,17 +1159,16 @@ class _DifficultySelector extends StatelessWidget {
           selected: selected,
           onSelected: (_) => onSelected(difficulty),
           showCheckmark: false,
-          selectedColor: const Color(0xFF5F5147),
-          backgroundColor: const Color(0xFFE3E7C8),
+          selectedColor: colors.primary,
+          backgroundColor: colors.surface,
           labelStyle: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF54473F),
+            color: selected ? colors.onPrimary : colors.text,
             fontWeight: FontWeight.w700,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color:
-                  selected ? const Color(0xFF5F5147) : const Color(0xFF9A7E6F),
+              color: selected ? colors.primary : colors.border,
             ),
           ),
         );

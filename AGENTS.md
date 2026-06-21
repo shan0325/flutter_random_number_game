@@ -55,6 +55,10 @@ normal::12.3::2026-06-11 10:20:30
 
 이 포맷을 바꾸는 경우 기존 사용자 기록 마이그레이션을 반드시 고려한다.
 
+새 기록은 `difficulty::record::date::wrongTapCount::totalTapCount` 형식을
+사용한다. 기존 2필드/3필드 형식은 계속 읽어야 하며, 탭 정보가 없는
+기록을 정확도나 오답 통계에 포함하지 않는다.
+
 ## 게임 기능 지침
 
 - 난이도 설정값은 `GameDifficulty` extension에서 관리한다.
@@ -70,6 +74,14 @@ normal::12.3::2026-06-11 10:20:30
 - 업적 달성일과 완료 횟수는 일반/챌린지 기록과 별도 key로 저장한다.
 - 기존 기록에 없는 오답 수는 추정하지 않으며 Perfect Run을 소급
   해제하지 않는다.
+- 통계 계산은 `GameStatistics`에서 처리하고 화면 위젯에서 재계산하지
+  않는다.
+- 테마 해금 규칙은 `AppThemeId`에서 관리하며 Classic은 기본, Midnight는
+  업적 3개, Neon은 `sevenDayStreak` 업적을 조건으로 유지한다.
+- 화면 색상은 `GameThemeColors`의 semantic 색상을 사용하고 화면에
+  팔레트별 hex 값을 직접 추가하지 않는다.
+- 선택 테마는 `selected_theme` key로 저장하며 잠긴 값이나 알 수 없는
+  값은 Classic으로 복구한다.
 - 챌린지 기록은 `daily_challenge_records` key와
   `yyyy-MM-dd::milliseconds` 형식을 유지한다.
 - 현재/최고 연속 참여일과 최근 7일 상태는 저장된 챌린지 기록에서

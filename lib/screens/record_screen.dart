@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
+import '../theme/game_theme.dart';
 import '../widgets/ad_mob_banner.dart';
 
 class RecordScreen extends StatefulWidget {
@@ -48,26 +49,25 @@ class _RecordScreenState extends State<RecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.gameColors;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFCBD2A4),
+        backgroundColor: colors.appBar,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context);
           },
-          color: const Color(0xFF54473F),
+          color: colors.text,
         ),
-        title: const Text(
+        title: Text(
           'Records',
-          style: TextStyle(
-            color: Color(0xFF54473F),
-          ),
+          style: TextStyle(color: colors.text),
         ),
         actions: [
           DropdownButton<String>(
             value: _sortOption,
-            icon: const Icon(Icons.sort, color: Color(0xFF54473F)),
+            icon: Icon(Icons.sort, color: colors.text),
             onChanged: (String? newValue) {
               setState(() {
                 _sortOption = newValue!;
@@ -80,7 +80,7 @@ class _RecordScreenState extends State<RecordScreen> {
                 value: value,
                 child: Text(
                   value == 'record' ? 'Record' : 'Date',
-                  style: const TextStyle(color: Color(0xFF54473F)),
+                  style: TextStyle(color: colors.text),
                 ),
               );
             }).toList(),
@@ -88,7 +88,7 @@ class _RecordScreenState extends State<RecordScreen> {
         ],
       ),
       body: Container(
-        color: const Color(0xFFE9EED9),
+        color: colors.screen,
         child: ListView.builder(
           controller: _scrollController,
           itemCount: widget.records.length,
@@ -97,22 +97,18 @@ class _RecordScreenState extends State<RecordScreen> {
             return ListTile(
               leading: Text(
                 '${widget.records.length - index}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF54473F),
+                  color: colors.text,
                 ),
               ),
               title: Text(
                 record.record,
-                style: const TextStyle(
-                  color: Color(0xFF54473F),
-                ),
+                style: TextStyle(color: colors.text),
               ),
               subtitle: Text(
                 '${widget.difficulty.label} · ${record.date}',
-                style: const TextStyle(
-                  color: Color(0xFF54473F),
-                ),
+                style: TextStyle(color: colors.mutedText),
               ),
             );
           },

@@ -1,6 +1,8 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/game_theme.dart';
+
 class NumberGrid extends StatelessWidget {
   const NumberGrid({
     super.key,
@@ -17,6 +19,7 @@ class NumberGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.gameColors;
     return Container(
       constraints: const BoxConstraints(maxWidth: 500),
       child: GridView.count(
@@ -33,8 +36,8 @@ class NumberGrid extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
               backgroundColor:
-                  number == null ? Colors.grey[300] : const Color(0xFFCBD2A4),
-              foregroundColor: const Color(0xFF54473F),
+                  number == null ? colors.completedTile : colors.numberTile,
+              foregroundColor: colors.text,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
