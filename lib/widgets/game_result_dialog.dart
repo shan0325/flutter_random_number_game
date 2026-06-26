@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/domain_localizations.dart';
+import '../l10n/l10n.dart';
 import '../models/achievement.dart';
 import '../models/game_difficulty.dart';
 import '../models/game_result.dart';
@@ -32,9 +34,10 @@ class GameResultDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return AlertDialog(
       backgroundColor: colors.surface,
-      title: Text(result.isNewBest ? 'NEW BEST!' : 'GAME OVER'),
+      title: Text(result.isNewBest ? l10n.newBest : l10n.gameOver),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -51,23 +54,35 @@ class GameResultDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _ResultRow(
-              label: modeLabel == null ? 'Difficulty' : 'Mode',
-              value: modeLabel ?? difficulty.label,
+              label: modeLabel == null ? l10n.difficulty : l10n.mode,
+              value: modeLabel ?? difficulty.localizedLabel(l10n),
             ),
-            _ResultRow(label: 'Grade', value: result.gradeLabel),
-            _ResultRow(label: 'Best', value: result.bestDeltaLabel),
-            if (streakCount != null)
-              _ResultRow(label: 'Streak', value: '$streakCount days'),
-            _ResultRow(label: 'Wrong taps', value: '${result.wrongTapCount}'),
             _ResultRow(
-              label: 'Accuracy',
+              label: l10n.grade,
+              value: result.localizedGrade(l10n),
+            ),
+            _ResultRow(
+              label: l10n.best,
+              value: result.localizedBestDelta(l10n),
+            ),
+            if (streakCount != null)
+              _ResultRow(
+                label: l10n.streak,
+                value: l10n.streakDays(streakCount!),
+              ),
+            _ResultRow(
+              label: l10n.wrongTaps,
+              value: '${result.wrongTapCount}',
+            ),
+            _ResultRow(
+              label: l10n.accuracy,
               value:
                   '${result.correctTapCount}/${result.totalTapCount} (${result.accuracyPercent}%)',
             ),
             if (unlockedAchievements.isNotEmpty) ...[
               const SizedBox(height: 14),
               Text(
-                'Achievement Unlocked',
+                l10n.achievementUnlocked,
                 style: TextStyle(
                   color: colors.progress,
                   fontWeight: FontWeight.w700,
@@ -76,7 +91,7 @@ class GameResultDialog extends StatelessWidget {
               const SizedBox(height: 4),
               ...unlockedAchievements.map(
                 (achievement) => Text(
-                  achievement.title,
+                  achievement.localizedTitle(l10n),
                   style: TextStyle(
                     color: colors.text,
                     fontWeight: FontWeight.w600,
@@ -91,11 +106,11 @@ class GameResultDialog extends StatelessWidget {
         if (showRecords)
           TextButton(
             onPressed: onViewRecords,
-            child: const Text('Records'),
+            child: Text(l10n.records),
           ),
         TextButton(
           onPressed: onPlayAgain,
-          child: const Text('Again'),
+          child: Text(l10n.again),
         ),
       ],
     );

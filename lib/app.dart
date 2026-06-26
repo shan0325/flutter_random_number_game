@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'l10n/generated/app_localizations.dart';
 import 'models/app_theme_id.dart';
 import 'screens/number_game_screen.dart';
 import 'services/achievement_storage.dart';
@@ -11,10 +13,12 @@ class MyApp extends StatefulWidget {
     super.key,
     this.themePreferenceStorage,
     this.achievementStorage,
+    this.locale,
   });
 
   final ThemePreferenceStorage? themePreferenceStorage;
   final AchievementStorage? achievementStorage;
+  final Locale? locale;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -55,6 +59,14 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: widget.locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildGameTheme(_themeId),
       home: NumberGameScreen(
         achievementStorage: _achievementStorage,

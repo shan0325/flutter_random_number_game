@@ -1,0 +1,142 @@
+{
+  "@@locale": "en",
+  "classicMode": "CLASSIC",
+  "dailyMode": "DAILY",
+  "start": "START",
+  "difficultyEasy": "Easy",
+  "difficultyNormal": "Normal",
+  "difficultyHard": "Hard",
+  "soundOff": "Sound off",
+  "soundOn": "Sound on",
+  "themes": "Themes",
+  "achievements": "Achievements",
+  "statistics": "Statistics",
+  "records": "Records",
+  "todayChallenge": "TODAY'S CHALLENGE",
+  "todayChallengeMode": "Today's Challenge",
+  "todayBestEmpty": "TODAY'S BEST --",
+  "todayBest": "TODAY'S BEST {time}",
+  "@todayBest": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "difficultyBest": "{difficulty} BEST {record}",
+  "@difficultyBest": {
+    "placeholders": {
+      "difficulty": {"type": "String"},
+      "record": {"type": "String"}
+    }
+  },
+  "currentStreak": "STREAK {count}",
+  "bestStreak": "BEST {count}",
+  "@currentStreak": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "@bestStreak": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "weekdayMonday": "M",
+  "weekdayTuesday": "T",
+  "weekdayWednesday": "W",
+  "weekdayThursday": "T",
+  "weekdayFriday": "F",
+  "weekdaySaturday": "S",
+  "weekdaySunday": "S",
+  "themeClassic": "Classic",
+  "themeMidnight": "Midnight",
+  "themeNeon": "Neon",
+  "unlockThreeAchievements": "Unlock 3 achievements",
+  "completeSevenDayStreak": "Complete the 7 Day Streak achievement",
+  "newBest": "NEW BEST!",
+  "gameOver": "GAME OVER",
+  "difficulty": "Difficulty",
+  "mode": "Mode",
+  "grade": "Grade",
+  "best": "Best",
+  "streak": "Streak",
+  "streakDays": "{count, plural, =1{1 day} other{{count} days}}",
+  "@streakDays": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "wrongTaps": "Wrong taps",
+  "accuracy": "Accuracy",
+  "achievementUnlocked": "Achievement Unlocked",
+  "again": "Again",
+  "gradePerfect": "Perfect",
+  "gradeSharp": "Sharp",
+  "gradeTryAgain": "Try Again",
+  "firstRecord": "First record",
+  "secondsFaster": "{seconds}s faster",
+  "secondsSlower": "{seconds}s slower",
+  "@secondsFaster": {
+    "placeholders": {"seconds": {"type": "String"}}
+  },
+  "@secondsSlower": {
+    "placeholders": {"seconds": {"type": "String"}}
+  },
+  "sortRecord": "Record",
+  "sortDate": "Date",
+  "recordSubtitle": "{difficulty} · {date}",
+  "@recordSubtitle": {
+    "placeholders": {
+      "difficulty": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "unlockedCount": "{unlocked} / {total} unlocked",
+  "@unlockedCount": {
+    "placeholders": {
+      "unlocked": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "unlockedAt": "Unlocked {date}",
+  "@unlockedAt": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "progressCount": "{current} / {target}",
+  "@progressCount": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
+  "achievementFirstClearTitle": "First Clear",
+  "achievementFirstClearDescription": "Complete your first game.",
+  "achievementPerfectRunTitle": "Perfect Run",
+  "achievementPerfectRunDescription": "Complete a game without a wrong tap.",
+  "achievementNormalSprinterTitle": "Normal Sprinter",
+  "achievementNormalSprinterDescription": "Finish Normal in 15.0 seconds or less.",
+  "achievementHardClearTitle": "Hard Clear",
+  "achievementHardClearDescription": "Complete Hard mode.",
+  "achievementDailyDebutTitle": "Daily Debut",
+  "achievementDailyDebutDescription": "Complete Today's Challenge.",
+  "achievementThreeDayStreakTitle": "3 Day Streak",
+  "achievementThreeDayStreakDescription": "Reach a 3-day daily challenge streak.",
+  "achievementSevenDayStreakTitle": "7 Day Streak",
+  "achievementSevenDayStreakDescription": "Reach a 7-day daily challenge streak.",
+  "achievementVeteranTitle": "Veteran",
+  "achievementVeteranDescription": "Complete 100 games.",
+  "dailyCompletions": "Daily completions",
+  "statisticsBestStreak": "Best streak",
+  "achievementFraction": "{unlocked} / {total}",
+  "@achievementFraction": {
+    "placeholders": {
+      "unlocked": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "noDifficultyRecords": "No {difficulty} records yet",
+  "@noDifficultyRecords": {
+    "placeholders": {"difficulty": {"type": "String"}}
+  },
+  "games": "Games",
+  "recentAverage": "Recent avg",
+  "recentTenGames": "Recent 10 games",
+  "secondsValue": "{seconds}s",
+  "@secondsValue": {
+    "placeholders": {"seconds": {"type": "String"}}
+  },
+  "tapStatisticsUnavailable": "Accuracy and wrong-tap statistics will appear after playing this version."
+}

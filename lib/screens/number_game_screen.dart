@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vibration/vibration.dart';
 
+import '../l10n/domain_localizations.dart';
+import '../l10n/l10n.dart';
 import '../models/achievement.dart';
 import '../models/achievement_progress.dart';
 import '../models/app_theme_id.dart';
@@ -356,7 +358,8 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
             result: result,
             difficulty: selectedDifficulty,
             record: record,
-            modeLabel: isDailyChallenge ? "Today's Challenge" : null,
+            modeLabel:
+                isDailyChallenge ? context.l10n.todayChallengeMode : null,
             showRecords: !isDailyChallenge,
             streakCount:
                 isDailyChallenge ? dailyChallengeStats.currentStreak : null,
@@ -632,6 +635,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final colors = context.gameColors;
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
@@ -659,7 +663,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                     children: [
                       IconButton(
                         key: const Key('sound-toggle'),
-                        tooltip: soundEnabled ? 'Sound off' : 'Sound on',
+                        tooltip: soundEnabled ? l10n.soundOff : l10n.soundOn,
                         icon: Icon(
                           soundEnabled ? Icons.volume_up : Icons.volume_off,
                         ),
@@ -678,7 +682,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       IconButton(
                         key: const Key('theme-picker-button'),
                         icon: const Icon(Icons.palette_outlined),
-                        tooltip: 'Themes',
+                        tooltip: l10n.themes,
                         onPressed: _openThemePicker,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
@@ -694,7 +698,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       IconButton(
                         key: const Key('achievements-button'),
                         icon: const Icon(Icons.emoji_events),
-                        tooltip: 'Achievements',
+                        tooltip: l10n.achievements,
                         onPressed: _openAchievements,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
@@ -710,7 +714,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       IconButton(
                         key: const Key('statistics-button'),
                         icon: const Icon(Icons.insights),
-                        tooltip: 'Statistics',
+                        tooltip: l10n.statistics,
                         onPressed: _openStatistics,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
@@ -725,7 +729,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.list),
-                        tooltip: 'Records',
+                        tooltip: l10n.records,
                         onPressed: () {
                           final selectedRecords = _selectedDifficultyRecords();
                           Navigator.push(
@@ -760,14 +764,14 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
                         children: [
                           const SizedBox(height: 24),
                           SegmentedButton<StartMode>(
-                            segments: const [
+                            segments: [
                               ButtonSegment(
                                 value: StartMode.classic,
-                                label: Text('CLASSIC'),
+                                label: Text(l10n.classicMode),
                               ),
                               ButtonSegment(
                                 value: StartMode.daily,
-                                label: Text('DAILY'),
+                                label: Text(l10n.dailyMode),
                               ),
                             ],
                             selected: {startMode},
@@ -841,6 +845,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
 
   Widget _buildClassicStartContent() {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return Column(
       key: const ValueKey(StartMode.classic),
       mainAxisSize: MainAxisSize.min,
@@ -854,7 +859,10 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         if (bestRecord != 0) ...[
           const SizedBox(height: 15),
           Text(
-            '${selectedDifficulty.label} BEST $bestRecord',
+            l10n.difficultyBest(
+              selectedDifficulty.localizedLabel(l10n),
+              '$bestRecord',
+            ),
             style: TextStyle(
               color: colors.text,
               fontSize: 20,
@@ -867,6 +875,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
 
   Widget _buildDailyStartContent() {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return Column(
       key: const ValueKey(StartMode.daily),
       mainAxisSize: MainAxisSize.min,
@@ -881,7 +890,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              "TODAY'S CHALLENGE",
+              l10n.todayChallenge,
               style: TextStyle(
                 color: colors.text,
                 fontSize: 17,
@@ -895,8 +904,10 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         const SizedBox(height: 14),
         Text(
           todayChallengeBestMilliseconds == null
-              ? "TODAY'S BEST --"
-              : "TODAY'S BEST ${formatTime(todayChallengeBestMilliseconds!)}",
+              ? l10n.todayBestEmpty
+              : l10n.todayBest(
+                  formatTime(todayChallengeBestMilliseconds!),
+                ),
           style: TextStyle(
             color: colors.text,
             fontSize: 16,
@@ -926,7 +937,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
         ),
         elevation: 0,
       ),
-      child: const Text('START'),
+      child: Text(context.l10n.start),
     );
   }
 
@@ -1055,6 +1066,7 @@ class _DailyChallengeSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return SizedBox(
       width: 280,
       child: Column(
@@ -1063,7 +1075,7 @@ class _DailyChallengeSummary extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'STREAK ${stats.currentStreak}',
+                  l10n.currentStreak(stats.currentStreak),
                   maxLines: 1,
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1075,7 +1087,7 @@ class _DailyChallengeSummary extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  'BEST ${stats.bestStreak}',
+                  l10n.bestStreak(stats.bestStreak),
                   maxLines: 1,
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1098,7 +1110,10 @@ class _DailyChallengeSummary extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      day.weekdayLabel,
+                      localizedWeekday(
+                        l10n,
+                        DateTime.parse(day.dateKey).weekday,
+                      ),
                       style: TextStyle(
                         color: colors.text,
                         fontSize: 11,
@@ -1148,6 +1163,7 @@ class _DifficultySelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: 8,
@@ -1155,7 +1171,7 @@ class _DifficultySelector extends StatelessWidget {
       children: GameDifficulty.values.map((difficulty) {
         final selected = difficulty == selectedDifficulty;
         return ChoiceChip(
-          label: Text(difficulty.label),
+          label: Text(difficulty.localizedLabel(l10n)),
           selected: selected,
           onSelected: (_) => onSelected(difficulty),
           showCheckmark: false,

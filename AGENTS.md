@@ -33,6 +33,13 @@
 - 재사용 가능한 UI는 `lib/widgets/`에 둔다.
 - 저장소, 외부 API, local persistence 로직은 `lib/services/`에 둔다.
 - 도메인 값과 순수 로직은 `lib/models/`에 둔다.
+- 사용자 표시 문구는 `lib/l10n/app_*.arb`에 두고 화면에 영문 문자열을
+  직접 추가하지 않는다.
+- 도메인 enum의 번역은 `lib/l10n/domain_localizations.dart`에서
+  처리하며 저장 값과 enum 이름은 번역하지 않는다.
+- 지원 locale은 `en`, `ko`, `ja`이며 그 외 locale은 영어로 fallback한다.
+- ARB 변경 후 `flutter gen-l10n`을 실행하고 생성 코드를 직접 수정하지
+  않는다.
 - 현재 규모에서는 상태관리 패키지를 추가하지 말고 `setState` 기반 구조를 유지한다.
 
 ## 기록 저장 규칙
@@ -101,6 +108,7 @@ normal::12.3::2026-06-11 10:20:30
 
 ```bash
 dart format lib test
+flutter gen-l10n
 flutter analyze
 flutter test
 flutter build apk --debug

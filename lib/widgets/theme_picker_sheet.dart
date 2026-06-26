@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/domain_localizations.dart';
+import '../l10n/l10n.dart';
 import '../models/achievement.dart';
 import '../models/app_theme_id.dart';
 import '../theme/game_theme.dart';
@@ -19,6 +21,7 @@ class ThemePickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return Material(
       color: colors.screen,
       child: SafeArea(
@@ -29,7 +32,7 @@ class ThemePickerSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Themes',
+                l10n.themes,
                 style: TextStyle(
                   color: colors.text,
                   fontSize: 22,
@@ -46,8 +49,10 @@ class ThemePickerSheet extends StatelessWidget {
                   enabled: unlocked,
                   contentPadding: EdgeInsets.zero,
                   leading: _ThemeSwatches(colors: palette),
-                  title: Text(themeId.displayName),
-                  subtitle: unlocked ? null : Text(themeId.unlockDescription!),
+                  title: Text(themeId.localizedName(l10n)),
+                  subtitle: unlocked
+                      ? null
+                      : Text(themeId.localizedUnlockDescription(l10n)!),
                   trailing: selectedTheme == themeId
                       ? const Icon(Icons.check_circle)
                       : Icon(unlocked ? Icons.circle_outlined : Icons.lock),

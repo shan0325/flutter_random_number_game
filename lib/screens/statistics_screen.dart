@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/domain_localizations.dart';
+import '../l10n/l10n.dart';
 import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../models/game_statistics.dart';
@@ -26,18 +28,23 @@ class StatisticsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return DefaultTabController(
       length: GameDifficulty.values.length,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: colors.appBar,
           foregroundColor: colors.text,
-          title: const Text('Statistics'),
+          title: Text(l10n.statistics),
           bottom: TabBar(
             labelColor: colors.text,
             indicatorColor: colors.primary,
             tabs: GameDifficulty.values
-                .map((difficulty) => Tab(text: difficulty.label))
+                .map(
+                  (difficulty) => Tab(
+                    text: difficulty.localizedLabel(l10n),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -86,26 +93,30 @@ class _OverallSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
           Expanded(
             child: _SummaryValue(
-              label: 'Daily completions',
+              label: l10n.dailyCompletions,
               value: '$dailyCompletionCount',
             ),
           ),
           Expanded(
             child: _SummaryValue(
-              label: 'Best streak',
+              label: l10n.statisticsBestStreak,
               value: '$bestDailyStreak',
             ),
           ),
           Expanded(
             child: _SummaryValue(
-              label: 'Achievements',
-              value: '$unlockedAchievementCount / $totalAchievementCount',
+              label: l10n.achievements,
+              value: l10n.achievementFraction(
+                unlockedAchievementCount,
+                totalAchievementCount,
+              ),
             ),
           ),
         ],
@@ -159,10 +170,13 @@ class _DifficultyStatisticsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     if (!statistics.hasData) {
       return Center(
         child: Text(
-          'No ${statistics.difficulty.label} records yet',
+          l10n.noDifficultyRecords(
+            statistics.difficulty.localizedLabel(l10n),
+          ),
           style: TextStyle(
             color: colors.mutedText,
             fontSize: 16,
@@ -179,23 +193,27 @@ class _DifficultyStatisticsView extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _Metric(label: 'Games', value: '${statistics.playCount}'),
+            _Metric(label: l10n.games, value: '${statistics.playCount}'),
             _Metric(
-              label: 'Best',
-              value: '${statistics.bestSeconds!.toStringAsFixed(1)}s',
+              label: l10n.best,
+              value: l10n.secondsValue(
+                statistics.bestSeconds!.toStringAsFixed(1),
+              ),
             ),
             _Metric(
-              label: 'Recent avg',
-              value: '${statistics.recentAverageSeconds!.toStringAsFixed(1)}s',
+              label: l10n.recentAverage,
+              value: l10n.secondsValue(
+                statistics.recentAverageSeconds!.toStringAsFixed(1),
+              ),
             ),
             _Metric(
-              label: 'Wrong taps',
+              label: l10n.wrongTaps,
               value: statistics.averageWrongTaps == null
                   ? '--'
                   : statistics.averageWrongTaps!.toStringAsFixed(1),
             ),
             _Metric(
-              label: 'Accuracy',
+              label: l10n.accuracy,
               value: statistics.averageAccuracyPercent == null
                   ? '--'
                   : '${statistics.averageAccuracyPercent!.toStringAsFixed(1)}%',
@@ -204,7 +222,7 @@ class _DifficultyStatisticsView extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          'Recent 10 games',
+          l10n.recentTenGames,
           style: TextStyle(
             color: colors.text,
             fontSize: 16,
@@ -221,7 +239,7 @@ class _DifficultyStatisticsView extends StatelessWidget {
         if (statistics.recordsWithTapData == 0) ...[
           const SizedBox(height: 16),
           Text(
-            'Accuracy and wrong-tap statistics will appear after playing this version.',
+            l10n.tapStatisticsUnavailable,
             style: TextStyle(
               color: colors.mutedText,
               fontSize: 12,

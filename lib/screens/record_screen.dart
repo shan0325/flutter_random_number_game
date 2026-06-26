@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/domain_localizations.dart';
+import '../l10n/l10n.dart';
 import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../theme/game_theme.dart';
@@ -50,6 +52,7 @@ class _RecordScreenState extends State<RecordScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: colors.appBar,
@@ -61,7 +64,7 @@ class _RecordScreenState extends State<RecordScreen> {
           color: colors.text,
         ),
         title: Text(
-          'Records',
+          l10n.records,
           style: TextStyle(color: colors.text),
         ),
         actions: [
@@ -79,7 +82,7 @@ class _RecordScreenState extends State<RecordScreen> {
               return DropdownMenuItem<String>(
                 value: value,
                 child: Text(
-                  value == 'record' ? 'Record' : 'Date',
+                  value == 'record' ? l10n.sortRecord : l10n.sortDate,
                   style: TextStyle(color: colors.text),
                 ),
               );
@@ -107,7 +110,10 @@ class _RecordScreenState extends State<RecordScreen> {
                 style: TextStyle(color: colors.text),
               ),
               subtitle: Text(
-                '${widget.difficulty.label} · ${record.date}',
+                l10n.recordSubtitle(
+                  widget.difficulty.localizedLabel(l10n),
+                  record.date,
+                ),
                 style: TextStyle(color: colors.mutedText),
               ),
             );

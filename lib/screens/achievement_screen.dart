@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/achievement.dart';
+import '../l10n/domain_localizations.dart';
+import '../l10n/l10n.dart';
 import '../models/achievement_progress.dart';
 import '../theme/game_theme.dart';
 
@@ -15,6 +16,7 @@ class AchievementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final l10n = context.l10n;
     final unlockedCount =
         achievements.where((achievement) => achievement.isUnlocked).length;
 
@@ -22,7 +24,7 @@ class AchievementScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: colors.appBar,
         foregroundColor: colors.text,
-        title: const Text('Achievements'),
+        title: Text(l10n.achievements),
       ),
       body: ColoredBox(
         color: colors.screen,
@@ -30,7 +32,7 @@ class AchievementScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              '$unlockedCount / ${achievements.length} unlocked',
+              l10n.unlockedCount(unlockedCount, achievements.length),
               style: TextStyle(
                 color: colors.text,
                 fontSize: 16,
@@ -55,6 +57,7 @@ class _AchievementTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final id = progress.id;
     final colors = context.gameColors;
+    final l10n = context.l10n;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       color: progress.isUnlocked ? colors.surface : colors.completedTile,
@@ -78,7 +81,7 @@ class _AchievementTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    id.title,
+                    id.localizedTitle(l10n),
                     style: TextStyle(
                       color: colors.text,
                       fontSize: 16,
@@ -87,7 +90,7 @@ class _AchievementTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    id.description,
+                    id.localizedDescription(l10n),
                     style: TextStyle(color: colors.mutedText),
                   ),
                   const SizedBox(height: 8),
@@ -101,8 +104,11 @@ class _AchievementTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     progress.isUnlocked
-                        ? 'Unlocked ${progress.unlockedAt}'
-                        : '${progress.current} / ${progress.target}',
+                        ? l10n.unlockedAt(progress.unlockedAt!)
+                        : l10n.progressCount(
+                            progress.current,
+                            progress.target,
+                          ),
                     style: TextStyle(
                       color: colors.mutedText,
                       fontSize: 12,

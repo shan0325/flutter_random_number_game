@@ -5,17 +5,6 @@ enum GameDifficulty {
 }
 
 extension GameDifficultyConfig on GameDifficulty {
-  String get label {
-    switch (this) {
-      case GameDifficulty.easy:
-        return 'Easy';
-      case GameDifficulty.normal:
-        return 'Normal';
-      case GameDifficulty.hard:
-        return 'Hard';
-    }
-  }
-
   int get gridSize {
     switch (this) {
       case GameDifficulty.easy:

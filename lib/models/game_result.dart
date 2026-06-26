@@ -21,17 +21,4 @@ class GameResult {
   }
 
   bool get isNewBest => previousBest == 0 || elapsedSeconds < previousBest;
-
-  String get gradeLabel {
-    if (wrongTapCount == 0) return 'Perfect';
-    if (wrongTapCount <= 2) return 'Sharp';
-    return 'Try Again';
-  }
-
-  String get bestDeltaLabel {
-    if (previousBest == 0) return 'First record';
-
-    final delta = (elapsedSeconds - previousBest).abs().toStringAsFixed(1);
-    return isNewBest ? '${delta}s faster' : '${delta}s slower';
-  }
 }

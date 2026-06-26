@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:onetotwentyfive/l10n/domain_localizations.dart';
+import 'package:onetotwentyfive/l10n/generated/app_localizations.dart';
 import 'package:onetotwentyfive/models/game_result.dart';
 
 void main() {
@@ -22,7 +25,12 @@ void main() {
       previousBest: 0,
     );
 
-    expect(result.gradeLabel, 'Perfect');
+    expect(
+      result.localizedGrade(
+        lookupAppLocalizations(const Locale('en')),
+      ),
+      'Perfect',
+    );
   });
 
   test('detects a new best record when there is no previous best', () {
@@ -34,7 +42,12 @@ void main() {
     );
 
     expect(result.isNewBest, isTrue);
-    expect(result.bestDeltaLabel, 'First record');
+    expect(
+      result.localizedBestDelta(
+        lookupAppLocalizations(const Locale('en')),
+      ),
+      'First record',
+    );
   });
 
   test('detects a new best record against previous best', () {
@@ -46,7 +59,12 @@ void main() {
     );
 
     expect(result.isNewBest, isTrue);
-    expect(result.bestDeltaLabel, '0.8s faster');
+    expect(
+      result.localizedBestDelta(
+        lookupAppLocalizations(const Locale('en')),
+      ),
+      '0.8s faster',
+    );
   });
 
   test('detects a slower result against previous best', () {
@@ -58,6 +76,11 @@ void main() {
     );
 
     expect(result.isNewBest, isFalse);
-    expect(result.bestDeltaLabel, '1.6s slower');
+    expect(
+      result.localizedBestDelta(
+        lookupAppLocalizations(const Locale('en')),
+      ),
+      '1.6s slower',
+    );
   });
 }
