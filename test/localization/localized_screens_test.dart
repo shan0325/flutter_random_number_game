@@ -11,6 +11,7 @@ import 'package:onetotwentyfive/screens/achievement_screen.dart';
 import 'package:onetotwentyfive/screens/record_screen.dart';
 import 'package:onetotwentyfive/screens/statistics_screen.dart';
 import 'package:onetotwentyfive/theme/game_theme.dart';
+import 'package:onetotwentyfive/widgets/ad_mob_banner.dart';
 import 'package:onetotwentyfive/widgets/game_result_dialog.dart';
 
 void main() {
@@ -56,6 +57,7 @@ void main() {
     expect(find.text('実績'), findsOneWidget);
     expect(find.text('初クリア'), findsOneWidget);
     expect(find.text('ゲームを初めてクリアする。'), findsOneWidget);
+    expect(find.byType(AdMobBanner), findsOneWidget);
   });
 
   testWidgets('localizes statistics in Korean', (tester) async {
@@ -75,6 +77,7 @@ void main() {
     expect(find.text('통계'), findsOneWidget);
     expect(find.text('쉬움'), findsOneWidget);
     expect(find.text('쉬움 난이도 기록이 없습니다'), findsOneWidget);
+    expect(find.byType(AdMobBanner), findsOneWidget);
   });
 
   testWidgets('localizes the result dialog in Japanese', (tester) async {

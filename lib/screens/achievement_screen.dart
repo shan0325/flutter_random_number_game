@@ -4,6 +4,7 @@ import '../l10n/domain_localizations.dart';
 import '../l10n/l10n.dart';
 import '../models/achievement_progress.dart';
 import '../theme/game_theme.dart';
+import '../widgets/game_scaffold.dart';
 
 class AchievementScreen extends StatelessWidget {
   const AchievementScreen({
@@ -20,7 +21,7 @@ class AchievementScreen extends StatelessWidget {
     final unlockedCount =
         achievements.where((achievement) => achievement.isUnlocked).length;
 
-    return Scaffold(
+    return GameScaffold(
       appBar: AppBar(
         backgroundColor: colors.appBar,
         foregroundColor: colors.text,

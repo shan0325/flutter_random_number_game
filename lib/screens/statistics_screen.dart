@@ -8,6 +8,7 @@ import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../models/game_statistics.dart';
 import '../theme/game_theme.dart';
+import '../widgets/game_scaffold.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({
@@ -31,7 +32,7 @@ class StatisticsScreen extends StatelessWidget {
     final l10n = context.l10n;
     return DefaultTabController(
       length: GameDifficulty.values.length,
-      child: Scaffold(
+      child: GameScaffold(
         appBar: AppBar(
           backgroundColor: colors.appBar,
           foregroundColor: colors.text,

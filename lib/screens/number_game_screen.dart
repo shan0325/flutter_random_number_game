@@ -23,7 +23,7 @@ import '../services/game_sound_player.dart';
 import '../services/record_storage.dart';
 import '../services/sound_preference_storage.dart';
 import '../theme/game_theme.dart';
-import '../widgets/ad_mob_banner.dart';
+import '../widgets/game_scaffold.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/number_grid.dart';
 import '../widgets/theme_picker_sheet.dart';
@@ -637,7 +637,7 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
     final colors = context.gameColors;
     final l10n = context.l10n;
 
-    return Scaffold(
+    return GameScaffold(
       appBar: AppBar(
         backgroundColor: colors.appBar,
         title: Text(
@@ -839,7 +839,6 @@ class _NumberGameScreenState extends State<NumberGameScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const AdMobBanner(),
     );
   }
 

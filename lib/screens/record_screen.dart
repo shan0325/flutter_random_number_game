@@ -5,7 +5,7 @@ import '../l10n/l10n.dart';
 import '../models/game_difficulty.dart';
 import '../models/game_record.dart';
 import '../theme/game_theme.dart';
-import '../widgets/ad_mob_banner.dart';
+import '../widgets/game_scaffold.dart';
 
 class RecordScreen extends StatefulWidget {
   const RecordScreen({
@@ -53,7 +53,7 @@ class _RecordScreenState extends State<RecordScreen> {
   Widget build(BuildContext context) {
     final colors = context.gameColors;
     final l10n = context.l10n;
-    return Scaffold(
+    return GameScaffold(
       appBar: AppBar(
         backgroundColor: colors.appBar,
         leading: IconButton(
@@ -120,7 +120,6 @@ class _RecordScreenState extends State<RecordScreen> {
           },
         ),
       ),
-      bottomNavigationBar: const AdMobBanner(),
     );
   }
 }
